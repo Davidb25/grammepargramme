@@ -6,11 +6,13 @@ session_start();
 
 // 2. Inclusion du contrôleur d'authentification
 require_once 'controllers/AuthController.php';
+require_once 'controllers/FoodController.php';
 
 // 3. Récupération de l'action dans l'URL. Si vide, l'action par défaut est 'dashboard'
 $action = $_GET['action'] ?? 'dashboard';
 
 $authController = new AuthController();
+$foodController = new FoodController();
 
 // 4. Système de protection des pages (Vérification de connexion)
 // Si l'utilisateur n'est pas connecté ET qu'il cherche à aller ailleurs que sur login ou register -> Redirection forcée !
@@ -32,6 +34,10 @@ switch ($action) {
 
     case 'logout':
         $authController->logoutAction();
+        break;
+
+    case 'foods': // <-- NOUVELLE ROUTE POUR LE CATALOGUE
+        $foodController->indexAction();
         break;
 
     case 'dashboard':
