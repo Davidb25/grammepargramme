@@ -170,7 +170,16 @@
                         </div>
                         <div class="col-6 mb-3">
                             <label class="form-label fw-semibold">Code-barres</label>
-                            <input type="text" name="barcode" id="foodBarcode" class="form-control" placeholder="Optionnel">
+                            <div class="input-group">
+                                <input type="text" name="barcode" id="foodBarcode" class="form-control" placeholder="Optionnel">
+                                <button class="btn btn-outline-primary" type="button" id="btnScanCamera" onclick="startCameraScanner()" title="Scanner avec l'appareil photo">
+                                    <i class="bi bi-camera"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="cameraScannerArea" class="mb-3 d-none text-center bg-dark rounded p-2 position-relative">
+                            <div id="interactive" class="viewport" style="width: 100%; max-height: 250px; overflow: hidden;"></div>
+                            <button type="button" class="btn btn-sm btn-danger mt-2" onclick="stopCameraScanner()">Arrêter la caméra</button>
                         </div>
                     </div>
 
@@ -194,7 +203,7 @@
         </div>
     </div>
 </div>
-
+<script src="https://unpkg.com/html5-qrcode"></script>
 <script>
 function setupAddMode() {
     document.getElementById('foodForm').reset();
@@ -229,4 +238,127 @@ function setupEditMode(button) {
 function resetFoodForm() {
     setupAddMode();
 }
+
+// --- LOGIQUE DU SCANNER PHOTO ---
+let html5QrCode = null;
+
+function startCameraScanner() {
+    const scannerArea = document.getElementById('cameraScannerArea');
+    scannerArea.classList.remove('d-none');
+
+    html5QrCode = new Html5Qrcode("interactive");
+
+    const config = { 
+        fps: 15,
+        qrbox: { width: 250, height: 150 }, // On remet le rectangle natif pour éviter le bug
+        aspectRatio: 1.777778
+    };
+
+    html5QrCode.start(
+        { facingMode: "environment" }, 
+        config,
+        (decodedText, decodedResult) => {
+            document.getElementById('foodBarcode').value = decodedText;
+            if (navigator.vibrate) navigator.vibrate(100);
+            stopCameraScanner();
+            alert("Produit scanné : " + decodedText);
+        },
+        (errorMessage) => {
+            console.log("Recherche en cours...");
+        }
+    ).catch((err) => {
+        console.error("Erreur caméra : ", err);
+        alert("Impossible de démarrer la caméra.");
+    });
+}
+function stopCameraScanner() {
+    if (html5QrCode && html5QrCode.isScanning) {
+        html5QrCode.stop().then(() => {
+            document.getElementById('cameraScannerArea').classList.add('d-none');
+        }).catch((err) => console.error(err));
+    } else {
+        document.getElementById('cameraScannerArea').classList.add('d-none');
+    }
+}
+
+// Modifie aussi ta fonction setupAddMode existante pour couper la caméra si elle était ouverte
+const originalSetupAddMode = setupAddMode;
+setupAddMode = function() {
+    originalSetupAddMode();
+    stopCameraScanner();
+}
 </script>
+<style>
+/* Conteneur principal de la caméra */
+#cameraScannerArea {
+    background-color: #1a1a1a;
+    border: 2px solid #333;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Ajustement de la zone vidéo */
+#interactive.viewport {
+    position: relative;
+    width: 100%;
+    height: auto; 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#interactive.viewport video {
+    width: 100% !important;
+    height: auto !important;
+    display: block;
+}
+
+/* 🧼 L'ARME SUPRÊME : On cible spécifiquement les calques de bordures de Html5-QRCode */
+#interactive div:has(video), 
+#interactive [id*="html5-qrcode"] {
+    /* Cette astuce force l'effacement des tracés superposés de la bibliothèque */
+    border-color: transparent !important;
+}
+
+/* On force TOUS les éléments enfants générés (les fameux coins blancs) à devenir invisibles */
+#interactive div div,
+#interactive div span,
+#interactive canvas {
+    border: none !important;
+    outline: none !important;
+    display: none !important;
+    opacity: 0 !important;
+}
+
+/* 🟡 TON RECTANGLE JAUNE PARFAIT ET SUR-MESURE */
+#interactive.viewport::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 250px;  
+    height: 150px; 
+    border: 2px solid #ffc107; /* Ton joli jaune */
+    border-radius: 8px;
+    box-shadow: 0 0 15px rgba(255, 193, 7, 0.4);
+    z-index: 999; /* On le passe au premier plan pour qu'il soit bien visible */
+    pointer-events: none;
+}
+
+/* 🔴 LA LIGNE ROUGE DE VISÉE */
+#interactive.viewport::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 180px;
+    height: 2px;
+    background: #d6d4d4;
+    box-shadow: 0 0 8px #d6d4d4;
+    opacity:0.5;
+    z-index: 1000;
+    pointer-events: none;
+}
+</style>
