@@ -27,17 +27,19 @@ class FoodController {
             $sugars = filter_input(INPUT_POST, 'sugars', FILTER_VALIDATE_FLOAT);
             $fat = filter_input(INPUT_POST, 'fat', FILTER_VALIDATE_FLOAT);
             $saturated_fat = filter_input(INPUT_POST, 'saturated_fat', FILTER_VALIDATE_FLOAT);
-            $fibers = filter_input(INPUT_POST, 'fibers', FILTER_VALIDATE_FLOAT); // <-- AJOUT
+            $fibers = filter_input(INPUT_POST, 'fibers', FILTER_VALIDATE_FLOAT);
             $salt = filter_input(INPUT_POST, 'salt', FILTER_VALIDATE_FLOAT);
             $barcode = strip_tags(trim($_POST['barcode'] ?? ''));
+            $image_path = strip_tags(trim($_POST['image_path'] ?? '')); // <-- AJOUT
+            $off_url = strip_tags(trim($_POST['off_url'] ?? ''));       // <-- AJOUT
 
             if ($name && $calories !== false && $protein !== false && $carbs !== false && $sugars !== false && $fat !== false && $saturated_fat !== false && $fibers !== false && $salt !== false) {
                 
                 if ($id) {
-                    $result = $this->foodModel->update($id, $name, $calories, $protein, $carbs, $sugars, $fat, $saturated_fat, $fibers, $salt, $barcode);
+                    $result = $this->foodModel->update($id, $name, $calories, $protein, $carbs, $sugars, $fat, $saturated_fat, $fibers, $salt, $barcode, $image_path, $off_url);
                     $message = "L'aliment a été modifié avec succès !";
                 } else {
-                    $result = $this->foodModel->create($name, $calories, $protein, $carbs, $sugars, $fat, $saturated_fat, $fibers, $salt, $barcode);
+                    $result = $this->foodModel->create($name, $calories, $protein, $carbs, $sugars, $fat, $saturated_fat, $fibers, $salt, $barcode, $image_path, $off_url);
                     $message = "L'aliment \"" . htmlspecialchars($name) . "\" a été ajouté !";
                 }
 

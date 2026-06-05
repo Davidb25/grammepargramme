@@ -23,11 +23,10 @@ class FoodModel {
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    // AJOUT DE :fibers dans l'INSERT
-    public function create($name, $calories, $protein, $carbs, $sugars, $fat, $saturated_fat, $fibers, $salt, $barcode = null) {
+    public function create($name, $calories, $protein, $carbs, $sugars, $fat, $saturated_fat, $fibers, $salt, $barcode = null, $image_path = null, $off_url = null) {
         $query = "INSERT INTO " . $this->table . " 
-                  (name, kcal_per_100g, proteins_per_100g, carbohydrates_per_100g, sugar_per_100g, fat_per_100g, saturated_fat_per_100g, fibers_per_100g, salt_per_100g, barcode) 
-                  VALUES (:name, :calories, :protein, :carbs, :sugars, :fat, :saturated_fat, :fibers, :salt, :barcode)";
+                  (name, kcal_per_100g, proteins_per_100g, carbohydrates_per_100g, sugar_per_100g, fat_per_100g, saturated_fat_per_100g, fibers_per_100g, salt_per_100g, barcode, image_path, off_url) 
+                  VALUES (:name, :calories, :protein, :carbs, :sugars, :fat, :saturated_fat, :fibers, :salt, :barcode, :image_path, :off_url)";
         
         $stmt = $this->db->prepare($query);
         return $stmt->execute([
@@ -40,18 +39,20 @@ class FoodModel {
             'saturated_fat' => $saturated_fat,
             'fibers' => $fibers,
             'salt' => $salt,
-            'barcode' => !empty($barcode) ? $barcode : null
+            'barcode' => !empty($barcode) ? $barcode : null,
+            'image_path' => !empty($image_path) ? $image_path : null,
+            'off_url' => !empty($off_url) ? $off_url : null
         ]);
     }
 
-    // AJOUT DE fibers_per_100g = :fibers dans l'UPDATE
-    public function update($id, $name, $calories, $protein, $carbs, $sugars, $fat, $saturated_fat, $fibers, $salt, $barcode = null) {
+    public function update($id, $name, $calories, $protein, $carbs, $sugars, $fat, $saturated_fat, $fibers, $salt, $barcode = null, $image_path = null, $off_url = null) {
         $query = "UPDATE " . $this->table . " 
-                SET name = :name, kcal_per_100g = :calories, proteins_per_100g = :protein, 
-                    carbohydrates_per_100g = :carbs, sugar_per_100g = :sugars, 
-                    fat_per_100g = :fat, saturated_fat_per_100g = :saturated_fat, 
-                    fibers_per_100g = :fibers, salt_per_100g = :salt, barcode = :barcode 
-                WHERE id = :id";
+                  SET name = :name, kcal_per_100g = :calories, proteins_per_100g = :protein, 
+                      carbohydrates_per_100g = :carbs, sugar_per_100g = :sugars, 
+                      fat_per_100g = :fat, saturated_fat_per_100g = :saturated_fat, 
+                      fibers_per_100g = :fibers, salt_per_100g = :salt, barcode = :barcode,
+                      image_path = :image_path, off_url = :off_url
+                  WHERE id = :id";
         
         $stmt = $this->db->prepare($query);
         return $stmt->execute([
@@ -65,7 +66,9 @@ class FoodModel {
             'saturated_fat' => $saturated_fat,
             'fibers' => $fibers,
             'salt' => $salt,
-            'barcode' => !empty($barcode) ? $barcode : null
+            'barcode' => !empty($barcode) ? $barcode : null,
+            'image_path' => !empty($image_path) ? $image_path : null,
+            'off_url' => !empty($off_url) ? $off_url : null
         ]);
     }
 }

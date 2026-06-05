@@ -16,52 +16,68 @@
     </div>
 <?php endif; ?>
 
-<?php if (!empty($error)): ?>
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        <i class="bi bi-exclamation-triangle-fill me-2"></i><?php echo $error; ?>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-<?php endif; ?>
-
 <div class="card shadow border-0">
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>
+                        <th style="width: 60px;">Visuel</th>
                         <th>Nom de l'aliment</th>
                         <th>Calories (100g)</th>
                         <th>Protéines</th>
-                        <th>Glucides <small>(dont sucres)</small></th>
-                        <th>Lipides <small>(dont saturés)</small></th>
-                        <th>Fibres</th> <th>Sel (100g)</th>
-                        <th>Code-barres</th>
+                        <th>Glucides <small>(sucres)</small></th>
+                        <th>Lipides <small>(saturés)</small></th>
+                        <th>Fibres</th>
+                        <th>Sel</th>
                         <th class="text-end">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if (empty($foods)): ?>
                         <tr>
-                            <td colspan="9" class="text-center py-4 text-muted">Aucun aliment dans le catalogue pour le moment.</td>
+                            <td colspan="9" class="text-center py-4 text-muted">Aucun aliment dans le catalogue.</td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($foods as $food): ?>
                             <tr>
-                                <td class="fw-bold text-dark"><?php echo htmlspecialchars($food['name']); ?></td>
-                                <td><span class="badge bg-primary px-2.5 py-1.5"><?php echo $food['kcal_per_100g']; ?> kcal</span></td>
+                                <td>
+                                    <?php if (!empty($food['image_path'])): ?>
+                                        <img src="<?php echo htmlspecialchars($food['image_path']); ?>" alt="Aliment" class="img-thumbnail" style="width: 45px; height: 45px; object-fit: cover;">
+                                    <?php else: ?>
+                                        <div class="bg-light text-muted d-flex align-items-center justify-content-center rounded border" style="width: 45px; height: 45px;">
+                                            <i class="bi bi-camera small"></i>
+                                        </div>
+                                    <?php endif; ?>
+                                </td>
+                                
+                                <td class="fw-bold text-dark">
+                                    <?php echo htmlspecialchars($food['name']); ?>
+                                    <?php if (!empty($food['barcode'])): ?>
+                                        <br><small class="text-muted fw-normal"><i class="bi bi-upc-scan me-1"></i><?php echo htmlspecialchars($food['barcode']); ?></small>
+                                    <?php endif; ?>
+                                </td>
+                                
+                                <td><span class="badge bg-primary"><?php echo $food['kcal_per_100g']; ?> kcal</span></td>
                                 <td><?php echo $food['proteins_per_100g']; ?> g</td>
                                 <td>
                                     <strong><?php echo $food['carbohydrates_per_100g']; ?> g</strong>
-                                    <br><small class="text-muted">dont sucres : <?php echo $food['sugar_per_100g']; ?> g</small>
+                                    <br><small class="text-muted">dont : <?php echo $food['sugar_per_100g']; ?> g</small>
                                 </td>
                                 <td>
                                     <strong><?php echo $food['fat_per_100g']; ?> g</strong>
-                                    <br><small class="text-muted">dont saturés : <?php echo $food['saturated_fat_per_100g']; ?> g</small>
+                                    <br><small class="text-muted">dont : <?php echo $food['saturated_fat_per_100g']; ?> g</small>
                                 </td>
-                                <td><?php echo $food['fibers_per_100g']; ?> g</td> <td><?php echo $food['salt_per_100g']; ?> g</td>
-                                <td class="text-muted small"><?php echo htmlspecialchars($food['barcode'] ?? '-'); ?></td>
+                                <td><?php echo $food['fibers_per_100g']; ?> g</td>
+                                <td><?php echo $food['salt_per_100g']; ?> g</td>
+                                
                                 <td class="text-end">
-                                    <button class="btn btn-sm btn-outline-warning me-1" title="Ajouter aux favoris (Bientôt disponible)">
+                                    <?php if (!empty($food['off_url'])): ?>
+                                        <a href="<?php echo htmlspecialchars($food['off_url']); ?>" target="_blank" class="btn btn-sm btn-outline-info me-1" title="Voir sur Open Food Facts">
+                                            <i class="bi bi-globe"></i>
+                                        </a>
+                                    <?php endif; ?>
+                                    <button class="btn btn-sm btn-outline-warning me-1" title="Favoris">
                                         <i class="bi bi-star"></i>
                                     </button>
                                     <button class="btn btn-sm btn-outline-secondary" title="Modifier"
@@ -78,7 +94,9 @@
                                             data-saturated_fat="<?php echo $food['saturated_fat_per_100g']; ?>"
                                             data-fibers="<?php echo $food['fibers_per_100g']; ?>"
                                             data-salt="<?php echo $food['salt_per_100g']; ?>"
-                                            data-barcode="<?php echo htmlspecialchars($food['barcode'] ?? ''); ?>">
+                                            data-barcode="<?php echo htmlspecialchars($food['barcode'] ?? ''); ?>"
+                                            data-image="<?php echo htmlspecialchars($food['image_path'] ?? ''); ?>"
+                                            data-url="<?php echo htmlspecialchars($food['off_url'] ?? ''); ?>">
                                         <i class="bi bi-pencil"></i>
                                     </button>
                                 </td>
@@ -95,12 +113,11 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header bg-light">
-                <h5 class="modal-title" id="modalTitle">Saisie Nutritionnelle (pour 100g / 100ml)</h5>
+                <h5 class="modal-title" id="modalTitle">Saisie Nutritionnelle</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="foodForm" action="index.php?action=foods" method="POST">
                 <div class="modal-body">
-                    
                     <input type="hidden" name="id" id="foodId">
                     
                     <div class="mb-3">
@@ -116,44 +133,55 @@
                     <div class="row">
                         <div class="col-6 mb-3">
                             <label class="form-label fw-semibold">Glucides (g) *</label>
-                            <input type="number" step="0.01" name="carbs" id="foodCarbs" class="form-control" required placeholder="ex: 4.9">
+                            <input type="number" step="0.01" name="carbs" id="foodCarbs" class="form-control" required>
                         </div>
                         <div class="col-6 mb-3">
                             <label class="form-label text-muted">dont Sucres (g) *</label>
-                            <input type="number" step="0.01" name="sugars" id="foodSugars" class="form-control" required placeholder="ex: 4.9">
+                            <input type="number" step="0.01" name="sugars" id="foodSugars" class="form-control" required>
                         </div>
                     </div>
 
                     <div class="row">
                         <div class="col-6 mb-3">
                             <label class="form-label fw-semibold">Lipides (g) *</label>
-                            <input type="number" step="0.01" name="fat" id="foodFat" class="form-control" required placeholder="ex: 0.3">
+                            <input type="number" step="0.01" name="fat" id="foodFat" class="form-control" required>
                         </div>
                         <div class="col-6 mb-3">
                             <label class="form-label text-muted">dont Saturés (g) *</label>
-                            <input type="number" step="0.01" name="saturated_fat" id="foodSaturatedFat" class="form-control" required placeholder="ex: 0.2">
+                            <input type="number" step="0.01" name="saturated_fat" id="foodSaturatedFat" class="form-control" required>
                         </div>
                     </div>
 
                     <div class="row">
                         <div class="col-6 mb-3">
                             <label class="form-label fw-semibold">Protéines (g) *</label>
-                            <input type="number" step="0.01" name="protein" id="foodProtein" class="form-control" required placeholder="ex: 10.0">
+                            <input type="number" step="0.01" name="protein" id="foodProtein" class="form-control" required>
                         </div>
                         <div class="col-6 mb-3">
-                            <label class="form-label fw-semibold">Fibres (g) *</label>
-                            <input type="number" step="0.01" name="fibers" id="foodFibers" class="form-control" required placeholder="ex: 0.0" value="0.00">
+                            <label class="form-label fw-semibold text-success">Fibres (g) *</label>
+                            <input type="number" step="0.01" name="fibers" id="foodFibers" class="form-control" required value="0.00">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label fw-semibold">Sel (g) *</label>
+                            <input type="number" step="0.01" name="salt" id="foodSalt" class="form-control" required value="0.00">
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label fw-semibold">Code-barres</label>
+                            <input type="text" name="barcode" id="foodBarcode" class="form-control" placeholder="Optionnel">
                         </div>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Sel (g) *</label>
-                        <input type="number" step="0.01" name="salt" id="foodSalt" class="form-control" required placeholder="ex: 0.11" value="0.00">
+                        <label class="form-label fw-semibold text-primary">Lien URL de la Photo (Open Food Facts ou Web)</label>
+                        <input type="text" name="image_path" id="foodImage" class="form-control" placeholder="https://images.openfoodfacts.org/...jpg">
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Code-barres (Optionnel)</label>
-                        <input type="text" name="barcode" id="foodBarcode" class="form-control" placeholder="ex: 4016223004351">
+                        <label class="form-label fw-semibold text-info">Lien de la Fiche Produit (En savoir plus)</label>
+                        <input type="text" name="off_url" id="foodUrl" class="form-control" placeholder="https://fr.openfoodfacts.org/produit/...">
                     </div>
 
                 </div>
@@ -191,9 +219,11 @@ function setupEditMode(button) {
     document.getElementById('foodSugars').value = button.getAttribute('data-sugars');
     document.getElementById('foodFat').value = button.getAttribute('data-fat');
     document.getElementById('foodSaturatedFat').value = button.getAttribute('data-saturated_fat');
-    document.getElementById('foodFibers').value = button.getAttribute('data-fibers'); // AJOUT
+    document.getElementById('foodFibers').value = button.getAttribute('data-fibers');
     document.getElementById('foodSalt').value = button.getAttribute('data-salt');
     document.getElementById('foodBarcode').value = button.getAttribute('data-barcode');
+    document.getElementById('foodImage').value = button.getAttribute('data-image'); // NOUVEAU
+    document.getElementById('foodUrl').value = button.getAttribute('data-url');     // NOUVEAU
 }
 
 function resetFoodForm() {
