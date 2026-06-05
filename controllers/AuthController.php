@@ -44,4 +44,44 @@ class AuthController {
         require_once 'views/register.php';
         require_once 'views/layout/footer.php';
     }
+
+// Gère l'action de connexion
+    public function loginAction() {
+        $error = null;
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $email = filter_input(INPUT_POST, 'email', FILTER_VALIDATE_EMAIL);
+            $password = $_POST['password'] ?? '';
+
+            if ($email && $password) {
+                $user = $this->userModel->login($email, $password);
+                
+                if ($user) {
+                    // Connexion réussie : On stocke les infos dans la SESSION PHP
+                    $_SESSION['user_id'] = $user['id'];
+                    $_SESSION['user_email'] = $email;
+                    
+                    // On redirige vers le tableau de bord
+                    header('Location: index.php?action=dashboard');
+                    exit();
+                } else {
+                    $error = "Identifiants incorrects.";
+                }
+            } else {
+                $error = "Veuillez remplir tous les champs.";
+            }
+        }
+
+        // Chargement de la vue de connexion
+        require_once 'views/layout/header.php';
+        require_once 'views/login.php';
+        require_once 'views/layout/footer.php';
+    }
+
+    // Gère la déconnexion
+    public function logoutAction() {
+        session_destroy();
+        header('Location: index.php?action=login');
+        exit();
+    }
 }
