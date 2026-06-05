@@ -12,7 +12,7 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4 shadow-sm">
     <div class="container">
         <a class="navbar-brand fw-bold" href="index.php?action=dashboard">
-            <i class="bi bi-speedometer2 text-warning me-2"></i>GrammeParGramme
+            <i class="bi bi-speedometer2 text-warning me-2"></i>Gramme Par Gramme
         </a>
         
         <?php if (isset($_SESSION['user_id'])): ?>

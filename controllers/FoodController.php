@@ -15,8 +15,26 @@ class FoodController {
     }
 
     public function indexAction() {
-        $error = null;
-        $success = null;
+$success = '';
+$error = '';
+
+    // Si on reçoit une demande de suppression classique
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
+        $delete_id = intval($_POST['delete_id']);
+        
+        try {
+            // On utilise ton modèle pour supprimer (en veillant à utiliser la table food_items)
+            $database = new Database();
+            $db = $database->getConnection();
+            
+            $stmt = $db->prepare("DELETE FROM food_items WHERE id = :id");
+            $stmt->execute(['id' => $delete_id]);
+            
+            $success = "Aliment supprimé avec succès !";
+        } catch (PDOException $e) {
+            $error = "Erreur lors de la suppression : " . $e->getMessage();
+        }
+}
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $id = filter_input(INPUT_POST, 'id', FILTER_VALIDATE_INT);

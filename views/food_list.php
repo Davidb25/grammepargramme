@@ -9,6 +9,9 @@
     </button>
 </div>
 
+<!-- Conteneur pour les notifications AJAX (Suppression, etc.) -->
+<div id="ajaxAlertContainer"></div>
+
 <?php if (!empty($success)): ?>
     <div class="alert alert-success alert-dismissible fade show" role="alert">
         <i class="bi bi-check-circle-fill me-2"></i><?php echo $success; ?>
@@ -80,7 +83,7 @@
                                     <button class="btn btn-sm btn-outline-warning me-1" title="Favoris">
                                         <i class="bi bi-star"></i>
                                     </button>
-                                    <button class="btn btn-sm btn-outline-secondary" title="Modifier"
+                                    <button class="btn btn-sm btn-outline-secondary me-1" title="Modifier"
                                             data-bs-toggle="modal" 
                                             data-bs-target="#addFoodModal"
                                             onclick="setupEditMode(this)"
@@ -99,6 +102,9 @@
                                             data-url="<?php echo htmlspecialchars($food['off_url'] ?? ''); ?>">
                                         <i class="bi bi-pencil"></i>
                                     </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="confirmDelete(<?= $food['id'] ?>, '<?= htmlspecialchars($food['name'], ENT_QUOTES) ?>')" title="Supprimer l'aliment">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -116,6 +122,7 @@
                 <h5 class="modal-title" id="modalTitle">Saisie Nutritionnelle</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
+            
             <form id="foodForm" action="index.php?action=foods" method="POST">
                 <div class="modal-body">
                     <input type="hidden" name="id" id="foodId">
@@ -158,15 +165,15 @@
                             <input type="number" step="0.01" name="protein" id="foodProtein" class="form-control" required>
                         </div>
                         <div class="col-6 mb-3">
-                            <label class="form-label fw-semibold text-success">Fibres (g) *</label>
-                            <input type="number" step="0.01" name="fibers" id="foodFibers" class="form-control" required value="0.00">
+                            <label class="form-label fw-semibold">Fibres (g) *</label>
+                            <input type="number" step="0.01" name="fibers" id="foodFibers" class="form-control" required>
                         </div>
                     </div>
 
                     <div class="row">
                         <div class="col-6 mb-3">
                             <label class="form-label fw-semibold">Sel (g) *</label>
-                            <input type="number" step="0.01" name="salt" id="foodSalt" class="form-control" required value="0.00">
+                            <input type="number" step="0.01" name="salt" id="foodSalt" class="form-control" required>
                         </div>
                         <div class="col-6 mb-3">
                             <label class="form-label fw-semibold">Code-barres</label>
@@ -177,10 +184,11 @@
                                 </button>
                             </div>
                         </div>
-                        <div id="cameraScannerArea" class="mb-3 d-none text-center bg-dark rounded p-2 position-relative">
-                            <div id="interactive" class="viewport" style="width: 100%; max-height: 250px; overflow: hidden;"></div>
-                            <button type="button" class="btn btn-sm btn-danger mt-2" onclick="stopCameraScanner()">Arrêter la caméra</button>
-                        </div>
+                    </div>
+
+                    <div id="cameraScannerArea" class="mb-3 d-none text-center bg-dark rounded p-2 position-relative">
+                        <div id="interactive" class="viewport" style="width: 100%; max-height: 250px; overflow: hidden;"></div>
+                        <button type="button" class="btn btn-sm btn-danger mt-2" onclick="stopCameraScanner()">Arrêter la caméra</button>
                     </div>
 
                     <div class="mb-3">
@@ -192,17 +200,47 @@
                         <label class="form-label fw-semibold text-info">Lien de la Fiche Produit (En savoir plus)</label>
                         <input type="text" name="off_url" id="foodUrl" class="form-control" placeholder="https://fr.openfoodfacts.org/produit/...">
                     </div>
-
                 </div>
-                <div class="modal-footer">
-                    <button type="reset" id="btnReset" class="btn btn-outline-secondary me-auto">Vider</button>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-                    <button type="submit" id="btnSubmit" class="btn btn-success">Enregistrer</button>
+
+                <div class="modal-footer d-flex justify-content-between">
+                    <button type="button" class="btn btn-outline-danger" id="btnDeleteFromModal" onclick="deleteCurrentFoodFromModal()">
+                        <i class="bi bi-trash"></i> Supprimer
+                    </button>
+                    <div>
+                        <button type="reset" id="btnReset" class="btn btn-outline-secondary">Vider</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" id="btnSubmit" class="btn btn-success">Enregistrer</button>
+                    </div>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="bi bi-exclamation-triangle"></i> Confirmation</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="index.php?action=foods" method="POST">
+                <div class="modal-body">
+                    <p>Es-tu sûr de vouloir supprimer l'aliment <strong id="deleteFoodName"></strong> ?</p>
+                    <p class="text-muted small mb-0">Cette action est irréversible.</p>
+                    
+                    <input type="hidden" name="delete_id" id="deleteFoodId">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-danger">Supprimer définitivement</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script src="https://unpkg.com/html5-qrcode"></script>
 <script>
 function setupAddMode() {
@@ -212,6 +250,9 @@ function setupAddMode() {
     document.getElementById('btnSubmit').innerText = "Enregistrer au catalogue";
     document.getElementById('btnSubmit').className = "btn btn-success";
     document.getElementById('btnReset').style.display = "inline-block";
+    
+    // On cache la corbeille en mode ajout
+    document.getElementById('btnDeleteFromModal').style.display = "none";
 }
 
 function setupEditMode(button) {
@@ -219,6 +260,9 @@ function setupEditMode(button) {
     document.getElementById('btnSubmit').innerText = "Sauvegarder les modifications";
     document.getElementById('btnSubmit').className = "btn btn-primary";
     document.getElementById('btnReset').style.display = "none";
+    
+    // CORRECTION : On affiche la corbeille en mode édition
+    document.getElementById('btnDeleteFromModal').style.display = "inline-block";
 
     document.getElementById('foodId').value = button.getAttribute('data-id');
     document.getElementById('foodName').value = button.getAttribute('data-name');
@@ -231,8 +275,8 @@ function setupEditMode(button) {
     document.getElementById('foodFibers').value = button.getAttribute('data-fibers');
     document.getElementById('foodSalt').value = button.getAttribute('data-salt');
     document.getElementById('foodBarcode').value = button.getAttribute('data-barcode');
-    document.getElementById('foodImage').value = button.getAttribute('data-image'); // NOUVEAU
-    document.getElementById('foodUrl').value = button.getAttribute('data-url');     // NOUVEAU
+    document.getElementById('foodImage').value = button.getAttribute('data-image');
+    document.getElementById('foodUrl').value = button.getAttribute('data-url');
 }
 
 function resetFoodForm() {
@@ -250,7 +294,7 @@ function startCameraScanner() {
 
     const config = { 
         fps: 15,
-        qrbox: { width: 250, height: 150 }, // On remet le rectangle natif pour éviter le bug
+        qrbox: { width: 250, height: 150 },
         aspectRatio: 1.777778
     };
 
@@ -271,6 +315,7 @@ function startCameraScanner() {
         alert("Impossible de démarrer la caméra.");
     });
 }
+
 function stopCameraScanner() {
     if (html5QrCode && html5QrCode.isScanning) {
         html5QrCode.stop().then(() => {
@@ -281,15 +326,55 @@ function stopCameraScanner() {
     }
 }
 
-// Modifie aussi ta fonction setupAddMode existante pour couper la caméra si elle était ouverte
 const originalSetupAddMode = setupAddMode;
 setupAddMode = function() {
     originalSetupAddMode();
     stopCameraScanner();
 }
+
+// --- SUPPRESSION ALIMENT ---
+let deleteModalBootstrap = null;
+
+function confirmDelete(id, name) {
+    document.getElementById('deleteFoodId').value = id;
+    document.getElementById('deleteFoodName').innerText = name;
+    
+    if(!deleteModalBootstrap) {
+        deleteModalBootstrap = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+    }
+    deleteModalBootstrap.show();
+}
+
+function deleteCurrentFoodFromModal() {
+    const id = document.getElementById('foodId').value; 
+    const name = document.getElementById('foodName').value; 
+    
+    // CORRECTION : Fermeture de la bonne modal via son ID réel 'addFoodModal'
+    const editModalEl = document.getElementById('addFoodModal');
+    const editModal = bootstrap.Modal.getInstance(editModalEl);
+    if(editModal) editModal.hide();
+    
+    confirmDelete(id, name);
+}
+
+function prepareDelete(id, name) {
+    document.getElementById('deleteFoodId').value = id;
+    document.getElementById('deleteFoodName').innerText = name;
+    
+    // Si tu l'ouvres depuis la modal d'édition, on ferme d'abord la modal d'édition
+    const addModalEl = document.getElementById('addFoodModal');
+    const addModalInstance = bootstrap.Modal.getInstance(addModalEl);
+    if (addModalInstance) {
+        addModalInstance.hide();
+    }
+    
+    // On affiche la modal de confirmation
+    const deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+    deleteModal.show();
+}
 </script>
+
 <style>
-/* Conteneur principal de la caméra */
 #cameraScannerArea {
     background-color: #1a1a1a;
     border: 2px solid #333;
@@ -297,7 +382,6 @@ setupAddMode = function() {
     position: relative;
 }
 
-/* Ajustement de la zone vidéo */
 #interactive.viewport {
     position: relative;
     width: 100%;
@@ -313,14 +397,11 @@ setupAddMode = function() {
     display: block;
 }
 
-/* 🧼 L'ARME SUPRÊME : On cible spécifiquement les calques de bordures de Html5-QRCode */
 #interactive div:has(video), 
 #interactive [id*="html5-qrcode"] {
-    /* Cette astuce force l'effacement des tracés superposés de la bibliothèque */
     border-color: transparent !important;
 }
 
-/* On force TOUS les éléments enfants générés (les fameux coins blancs) à devenir invisibles */
 #interactive div div,
 #interactive div span,
 #interactive canvas {
@@ -330,7 +411,6 @@ setupAddMode = function() {
     opacity: 0 !important;
 }
 
-/* 🟡 TON RECTANGLE JAUNE PARFAIT ET SUR-MESURE */
 #interactive.viewport::before {
     content: "";
     position: absolute;
@@ -339,14 +419,13 @@ setupAddMode = function() {
     transform: translate(-50%, -50%);
     width: 250px;  
     height: 150px; 
-    border: 2px solid #ffc107; /* Ton joli jaune */
+    border: 2px solid #ffc107; 
     border-radius: 8px;
     box-shadow: 0 0 15px rgba(255, 193, 7, 0.4);
-    z-index: 999; /* On le passe au premier plan pour qu'il soit bien visible */
+    z-index: 999; 
     pointer-events: none;
 }
 
-/* 🔴 LA LIGNE ROUGE DE VISÉE */
 #interactive.viewport::after {
     content: "";
     position: absolute;
@@ -357,7 +436,7 @@ setupAddMode = function() {
     height: 2px;
     background: #d6d4d4;
     box-shadow: 0 0 8px #d6d4d4;
-    opacity:0.5;
+    opacity: 0.5;
     z-index: 1000;
     pointer-events: none;
 }
