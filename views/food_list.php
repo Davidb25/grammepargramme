@@ -9,7 +9,6 @@
     </button>
 </div>
 
-<!-- Conteneur pour les notifications AJAX (Suppression, etc.) -->
 <div id="ajaxAlertContainer"></div>
 
 <?php if (!empty($success)): ?>
@@ -99,7 +98,8 @@
                                             data-salt="<?php echo $food['salt_per_100g']; ?>"
                                             data-barcode="<?php echo htmlspecialchars($food['barcode'] ?? ''); ?>"
                                             data-image="<?php echo htmlspecialchars($food['image_path'] ?? ''); ?>"
-                                            data-url="<?php echo htmlspecialchars($food['off_url'] ?? ''); ?>">
+                                            data-url="<?php echo htmlspecialchars($food['off_url'] ?? ''); ?>"
+                                            data-category="<?php echo $food['category_id'] ?? ''; ?>">
                                         <i class="bi bi-pencil"></i>
                                     </button>
                                     <button class="btn btn-sm btn-outline-danger" onclick="confirmDelete(<?= $food['id'] ?>, '<?= htmlspecialchars($food['name'], ENT_QUOTES) ?>')" title="Supprimer l'aliment">
@@ -142,16 +142,35 @@
                         <div id="apiFeedback" class="small mt-1 d-none"></div>
                     </div>
 
+                    <div id="foodImagePreviewContainer" class="mb-3 text-center d-none">
+                        <label class="form-label d-block fw-semibold text-muted">Visuel de l'aliment</label>
+                        <img id="foodImagePreview" src="" alt="Aperçu" class="img-thumbnail shadow-sm" style="max-height: 120px; object-fit: cover;">
+                    </div>
+
                     <div id="cameraScannerArea" class="mb-3 d-none text-center bg-dark rounded p-2 position-relative">
                         <div id="interactive" class="viewport" style="width: 100%; max-height: 250px; overflow: hidden;"></div>
                         <button type="button" class="btn btn-sm btn-danger mt-2" onclick="stopCameraScanner()">Arrêter la caméra</button>
                     </div>
-                    
+
                     <hr class="text-muted">
 
                     <div class="mb-3">
                         <label class="form-label fw-bold">Nom de l'aliment *</label>
                         <input type="text" name="name" id="foodName" class="form-control" required placeholder="ex: Skyr, Miel...">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Catégorie *</label>
+                        <select name="category_id" id="foodCategoryId" class="form-control" required>
+                            <option value="" disabled selected>-- Choisir une catégorie --</option>
+                            <?php if (!empty($categories)): ?>
+                                <?php foreach ($categories as $cat): ?>
+                                    <option value="<?php echo $cat['id']; ?>">
+                                        <?php echo htmlspecialchars($cat['name']); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </select>
                     </div>
                     
                     <div class="mb-3">
@@ -213,7 +232,7 @@
                         <i class="bi bi-trash"></i> Supprimer
                     </button>
                     <div>
-                        <button type="reset" id="btnReset" class="btn btn-outline-secondary" onclick="clearApiFeedback()">Vider</button>
+                        <button type="button" id="btnReset" class="btn btn-outline-secondary" onclick="clearApiFeedback()">Vider</button>
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
                         <button type="submit" id="btnSubmit" class="btn btn-success">Enregistrer</button>
                     </div>
@@ -222,7 +241,6 @@
         </div>
     </div>
 </div>
-
 
 <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -235,7 +253,6 @@
                 <div class="modal-body">
                     <p>Es-tu sûr de vouloir supprimer l'aliment <strong id="deleteFoodName"></strong> ?</p>
                     <p class="text-muted small mb-0">Cette action est irréversible.</p>
-                    
                     <input type="hidden" name="delete_id" id="deleteFoodId">
                 </div>
                 <div class="modal-footer">
@@ -249,6 +266,7 @@
 
 <script src="https://unpkg.com/html5-qrcode"></script>
 <script>
+// --- LOGIQUE DU FORMULAIRE (AJOUT / MODIFICATION) ---
 function setupAddMode() {
     document.getElementById('foodForm').reset();
     document.getElementById('foodId').value = '';
@@ -256,9 +274,12 @@ function setupAddMode() {
     document.getElementById('btnSubmit').innerText = "Enregistrer au catalogue";
     document.getElementById('btnSubmit').className = "btn btn-success";
     document.getElementById('btnReset').style.display = "inline-block";
-    
-    // On cache la corbeille en mode ajout
     document.getElementById('btnDeleteFromModal').style.display = "none";
+    
+    // On cache l'aperçu de l'image en mode ajout pur
+    document.getElementById('foodImagePreviewContainer').classList.add('d-none');
+    document.getElementById('foodImagePreview').src = '';
+    clearApiFeedback();
 }
 
 function setupEditMode(button) {
@@ -266,9 +287,8 @@ function setupEditMode(button) {
     document.getElementById('btnSubmit').innerText = "Sauvegarder les modifications";
     document.getElementById('btnSubmit').className = "btn btn-primary";
     document.getElementById('btnReset').style.display = "none";
-    
-    // CORRECTION : On affiche la corbeille en mode édition
     document.getElementById('btnDeleteFromModal').style.display = "inline-block";
+    clearApiFeedback();
 
     document.getElementById('foodId').value = button.getAttribute('data-id');
     document.getElementById('foodName').value = button.getAttribute('data-name');
@@ -281,12 +301,155 @@ function setupEditMode(button) {
     document.getElementById('foodFibers').value = button.getAttribute('data-fibers');
     document.getElementById('foodSalt').value = button.getAttribute('data-salt');
     document.getElementById('foodBarcode').value = button.getAttribute('data-barcode');
-    document.getElementById('foodImage').value = button.getAttribute('data-image');
+    
+    const imgPath = button.getAttribute('data-image');
+    document.getElementById('foodImage').value = imgPath || '';
     document.getElementById('foodUrl').value = button.getAttribute('data-url');
+    document.getElementById('foodCategoryId').value = button.getAttribute('data-category');
+
+    // Gestion de l'affichage de l'image en édition
+    const previewContainer = document.getElementById('foodImagePreviewContainer');
+    const previewImg = document.getElementById('foodImagePreview');
+    if (imgPath && imgPath.trim() !== '') {
+        previewImg.src = imgPath;
+        previewContainer.classList.remove('d-none');
+    } else {
+        previewContainer.classList.add('d-none');
+        previewImg.src = '';
+    }
 }
 
-function resetFoodForm() {
-    setupAddMode();
+// --- LOGIQUE D'INTERROGATION OPEN FOOD FACTS ---
+function clearApiFeedback() {
+    const loader = document.getElementById('apiLoader');
+    const feedback = document.getElementById('apiFeedback');
+    if(loader) loader.classList.add('d-none');
+    if(feedback) {
+        feedback.classList.add('d-none');
+        feedback.className = "small mt-1 d-none";
+    }
+}
+
+function checkBarcodeLength(barcode) {
+    const cleanedBarcode = barcode.trim();
+    
+    // Si le code-barres fait la bonne taille (8 ou 13 caractères), on lance la recherche API
+    if (cleanedBarcode.length === 13 || cleanedBarcode.length === 8) {
+        fetchOFFData(cleanedBarcode);
+    } 
+    // Sinon, dès que l'utilisateur modifie le code (ex: il supprime un chiffre), on nettoie tout
+    else {
+        clearApiFeedback(); // Efface les messages de succès / erreur
+        
+        // On réinitialise les champs liés aux macros et au produit, sans toucher au code-barres lui-même
+        document.getElementById('foodName').value = '';
+        document.getElementById('foodCalories').value = '';
+        document.getElementById('foodCarbs').value = '';
+        document.getElementById('foodSugars').value = '';
+        document.getElementById('foodFat').value = '';
+        document.getElementById('foodSaturatedFat').value = '';
+        document.getElementById('foodProtein').value = '';
+        document.getElementById('foodFibers').value = '';
+        document.getElementById('foodSalt').value = '';
+        document.getElementById('foodImage').value = '';
+        document.getElementById('foodUrl').value = '';
+        document.getElementById('foodCategoryId').value = ''; // Remet la catégorie par défaut
+        
+        // NOUVEAU : On vide et on masque proprement le visuel de l'image
+        const previewContainer = document.getElementById('foodImagePreviewContainer');
+        const previewImg = document.getElementById('foodImagePreview');
+        if (previewContainer) previewContainer.classList.add('d-none');
+        if (previewImg) previewImg.src = '';
+    }
+}
+
+function fetchOFFData(barcode) {
+    if (!barcode) return;
+
+    const loader = document.getElementById('apiLoader');
+    const feedback = document.getElementById('apiFeedback');
+    
+    loader.classList.remove('d-none');
+    feedback.classList.add('d-none');
+
+    const url = `https://fr.openfoodfacts.org/api/v2/product/${barcode}.json`;
+
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            loader.classList.add('d-none');
+            feedback.classList.remove('d-none');
+
+            if (data.status === 1 && data.product) {
+                const product = data.product;
+                const nutrients = product.nutriments || {};
+
+                const name = product.product_name_fr || product.product_name || '';
+                const kcal = nutrients['energy-kcal_100g'] || nutrients['energy-kcal_value'] || '';
+                const carbs = nutrients['carbohydrates_100g'];
+                const sugars = nutrients['sugars_100g'];
+                const fat = nutrients['fat_100g'];
+                const satFat = nutrients['saturated-fat_100g'];
+                const protein = nutrients['proteins_100g'];
+                const fibers = nutrients['fiber_100g'];
+                const salt = nutrients['salt_100g'];
+
+                document.getElementById('foodName').value = name;
+                document.getElementById('foodCalories').value = kcal ? Math.round(kcal) : '';
+
+                const formatMacro = (val) => (val !== undefined && val !== '') ? parseFloat(val).toFixed(2) : '';
+
+                document.getElementById('foodCarbs').value = formatMacro(carbs);
+                document.getElementById('foodSugars').value = formatMacro(sugars) || '0.00';
+                document.getElementById('foodFat').value = formatMacro(fat);
+                document.getElementById('foodSaturatedFat').value = formatMacro(satFat) || '0.00';
+                document.getElementById('foodProtein').value = formatMacro(protein);
+                document.getElementById('foodFibers').value = formatMacro(fibers) || '0.00';
+                document.getElementById('foodSalt').value = formatMacro(salt) || '0.00';
+                
+                // Extraction de la photo
+                const imgUrl = product.image_url || product.image_front_url || product.image_thumb_url || '';
+                document.getElementById('foodImage').value = imgUrl;
+                document.getElementById('foodUrl').value = `https://fr.openfoodfacts.org/produit/${barcode}`;
+
+                // Affichage en direct de l'image scannée
+                const previewContainer = document.getElementById('foodImagePreviewContainer');
+                const previewImg = document.getElementById('foodImagePreview');
+                if (imgUrl && imgUrl.trim() !== '') {
+                    previewImg.src = imgUrl;
+                    previewContainer.classList.remove('d-none');
+                } else {
+                    previewContainer.classList.add('d-none');
+                    previewImg.src = '';
+                }
+
+                if (!kcal || carbs === undefined || fat === undefined || protein === undefined) {
+                    feedback.className = "alert alert-warning mt-2 mb-0 py-2 d-block";
+                    feedback.innerHTML = `
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+                            <div>
+                                <strong>Produit incomplet !</strong><br>
+                                Certaines macros manquent sur Open Food Facts. Remplis les manuellement.
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    feedback.className = "alert alert-success mt-2 mb-0 py-2 d-block";
+                    feedback.innerHTML = "<i class='bi bi-check-circle-fill me-2'></i> Produit importé avec succès !";
+                }
+            } else {
+                feedback.className = "alert alert-danger mt-2 mb-0 py-2 d-block";
+                feedback.innerHTML = "<i class='bi bi-exclamation-circle-fill me-2'></i> Produit inconnu. Saisie 100% manuelle.";
+            }
+        })
+        .catch(error => {
+            console.error('Erreur OFF:', error);
+            loader.classList.add('d-none');
+            feedback.classList.remove('d-none');
+            feedback.className = "alert alert-danger mt-2 mb-0 py-2 d-block";
+            feedback.innerHTML = "<i class='bi bi-wifi-off me-2'></i> Erreur réseau.";
+        });
 }
 
 // --- LOGIQUE DU SCANNER PHOTO ---
@@ -311,12 +474,10 @@ function startCameraScanner() {
             document.getElementById('foodBarcode').value = decodedText;
             if (navigator.vibrate) navigator.vibrate(100);
             stopCameraScanner();
-            
-            // On lance directement la recherche automatique avec le code scanné !
             fetchOFFData(decodedText);
         },
         (errorMessage) => {
-            console.log("Recherche en cours...");
+            console.log("Recherche scanner...");
         }
     ).catch((err) => {
         console.error("Erreur caméra : ", err);
@@ -332,12 +493,6 @@ function stopCameraScanner() {
     } else {
         document.getElementById('cameraScannerArea').classList.add('d-none');
     }
-}
-
-const originalSetupAddMode = setupAddMode;
-setupAddMode = function() {
-    originalSetupAddMode();
-    stopCameraScanner();
 }
 
 // --- SUPPRESSION ALIMENT ---
@@ -357,7 +512,6 @@ function deleteCurrentFoodFromModal() {
     const id = document.getElementById('foodId').value; 
     const name = document.getElementById('foodName').value; 
     
-    // CORRECTION : Fermeture de la bonne modal via son ID réel 'addFoodModal'
     const editModalEl = document.getElementById('addFoodModal');
     const editModal = bootstrap.Modal.getInstance(editModalEl);
     if(editModal) editModal.hide();
@@ -365,127 +519,73 @@ function deleteCurrentFoodFromModal() {
     confirmDelete(id, name);
 }
 
-function prepareDelete(id, name) {
-    document.getElementById('deleteFoodId').value = id;
-    document.getElementById('deleteFoodName').innerText = name;
+// --- AUTO-FOCUS & REFORMATAGE INTELLIGENT DES SAISIES NUMÉRIQUES ---
+document.addEventListener("DOMContentLoaded", function () {
     
-    // Si tu l'ouvres depuis la modal d'édition, on ferme d'abord la modal d'édition
-    const addModalEl = document.getElementById('addFoodModal');
-    const addModalInstance = bootstrap.Modal.getInstance(addModalEl);
-    if (addModalInstance) {
-        addModalInstance.hide();
-    }
-    
-    // On affiche la modal de confirmation
-    const deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
-    deleteModal.show();
-}
+    // Auto-focus sur le champ Code-barres dès l'ouverture de la modale
+    const modalEl = document.getElementById('addFoodModal');
+    modalEl.addEventListener('shown.bs.modal', function () {
+        document.getElementById('foodBarcode').focus();
+    });
 
-// --- LOGIQUE D'INTERROGATION OPEN FOOD FACTS ---
-
-// Nettoie les messages de retour de l'API
-function clearApiFeedback() {
-    const loader = document.getElementById('apiLoader');
-    const feedback = document.getElementById('apiFeedback');
-    loader.classList.add('d-none');
-    feedback.classList.add('d-none');
-    feedback.className = "small mt-1 d-none";
-}
-
-// Déclenche l'appel si la saisie fait mine d'être un code-barres standard (généralement entre 8 et 13 caractères)
-function checkBarcodeLength(barcode) {
-    const cleanedBarcode = barcode.trim();
-    if (cleanedBarcode.length === 13 || cleanedBarcode.length === 8) {
-        fetchOFFData(cleanedBarcode);
-    }
-}
-
-// Fonction maîtresse d'appel à l'API Open Food Facts
-function fetchOFFData(barcode) {
-    if (!barcode) return;
-
-    const loader = document.getElementById('apiLoader');
-    const feedback = document.getElementById('apiFeedback');
-    
-    // On affiche le spinner de chargement
-    loader.classList.remove('d-none');
-    feedback.classList.add('d-none');
-
-    // URL officielle de l'API Open Food Facts v2
-    const url = `https://fr.openfoodfacts.org/api/v2/product/${barcode}.json`;
-
-    fetch(url)
-        .then(response => response.json())
-        .then(data => {
-            loader.classList.add('d-none');
-            feedback.classList.remove('d-none');
-
-            if (data.status === 1 && data.product) {
-                const product = data.product;
-                const nutrients = product.nutriments || {};
-
-                // 1. Extraction des valeurs de l'API
-                const name = product.product_name_fr || product.product_name || '';
-                const kcal = nutrients['energy-kcal_100g'] || nutrients['energy-kcal_value'] || '';
-                const carbs = nutrients['carbohydrates_100g'];
-                const sugars = nutrients['sugars_100g'];
-                const fat = nutrients['fat_100g'];
-                const satFat = nutrients['saturated-fat_100g'];
-                const protein = nutrients['proteins_100g'];
-                const fibers = nutrients['fiber_100g'];
-                const salt = nutrients['salt_100g'];
-
-                // 2. Remplissage des inputs dans le formulaire
-                document.getElementById('foodName').value = name;
-                document.getElementById('foodCalories').value = kcal;
-                document.getElementById('foodCarbs').value = carbs !== undefined ? carbs : '';
-                document.getElementById('foodSugars').value = sugars !== undefined ? sugars : '0';
-                document.getElementById('foodFat').value = fat !== undefined ? fat : '';
-                document.getElementById('foodSaturatedFat').value = satFat !== undefined ? satFat : '0';
-                document.getElementById('foodProtein').value = protein !== undefined ? protein : '';
-                document.getElementById('foodFibers').value = fibers !== undefined ? fibers : '0.00';
-                document.getElementById('foodSalt').value = salt !== undefined ? salt : '0.00';
-                
-                // Remplissage des médias et fiches produits
-                const imgUrl = product.image_url || product.image_front_url || product.image_thumb_url || '';
-                document.getElementById('foodImage').value = imgUrl;
-                document.getElementById('foodUrl').value = `https://fr.openfoodfacts.org/produit/${barcode}`;
-
-                // 3. VÉRIFICATION DES DONNÉES MANQUANTES
-                // Si le nom, les calories ou l'une des macros clés est vide/indéfinie
-                if (!kcal || carbs === undefined || fat === undefined || protein === undefined) {
-                    feedback.className = "alert alert-warning mt-2 mb-0 py-2 d-block";
-                    feedback.innerHTML = `
-                        <div class="d-flex align-items-center">
-                            <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
-                            <div>
-                                <strong>Produit trouvé, mais incomplet !</strong><br>
-                                Certaines valeurs nutritionnelles manquent sur Open Food Facts. Merci de les compléter manuellement.
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    // Si tout est complet à 100%
-                    feedback.className = "alert alert-success mt-2 mb-0 py-2 d-block";
-                    feedback.innerHTML = "<i class='bi bi-check-circle-fill me-2'></i> Produit trouvé et importé avec succès !";
-                }
-
-            } else {
-                // Produit totalement inconnu sur Open Food Facts
-                feedback.className = "alert alert-danger mt-2 mb-0 py-2 d-block";
-                feedback.innerHTML = "<i class='bi bi-exclamation-circle-fill me-2'></i> Produit inconnu. Merci de saisir toutes les données à la main.";
-            }
-        })
-        .catch(error => {
-            console.error('Erreur lors de la récupération OFF:', error);
-            loader.classList.add('d-none');
-            feedback.classList.remove('d-none');
-            feedback.className = "alert alert-danger mt-2 mb-0 py-2 d-block";
-            feedback.innerHTML = "<i class='bi bi-wifi-off me-2'></i> Erreur réseau lors de la recherche du produit.";
+    // Gestion propre des décimales (Solution ultime type=text temporaire)
+    const inputs = document.querySelectorAll('#foodForm input[type="number"]');
+    inputs.forEach(input => {
+        input.addEventListener("focus", function() {
+            this.type = "text";
         });
-}
 
+        input.addEventListener("keydown", function(e) {
+            if (e.key === ',' || e.key === 'Decimal') {
+                e.preventDefault();
+                const start = this.selectionStart;
+                const end = this.selectionEnd;
+                const val = this.value;
+                this.value = val.slice(0, start) + '.' + val.slice(end);
+                this.selectionStart = this.selectionEnd = start + 1;
+                this.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+        });
 
+        input.addEventListener("beforeinput", function(e) {
+            if (e.data === ',') {
+                e.preventDefault();
+                const start = this.selectionStart;
+                const end = this.selectionEnd;
+                const val = this.value;
+                this.value = val.slice(0, start) + '.' + val.slice(end);
+                this.selectionStart = this.selectionEnd = start + 1;
+            }
+        });
+
+        input.addEventListener("blur", function() {
+            let txtValue = this.value.toString().replace(',', '.');
+            if (txtValue !== '') {
+                let num = parseFloat(txtValue);
+                if (!isNaN(num)) {
+                    this.value = num.toFixed(2);
+                }
+            }
+            this.type = "number";
+        });
+    });
+
+    // Écouteur manuel sur le champ URL de la photo pour mettre à jour l'aperçu si collé à la main
+    const imageInput = document.getElementById('foodImage');
+    if (imageInput) {
+        imageInput.addEventListener('change', function() {
+            const previewContainer = document.getElementById('foodImagePreviewContainer');
+            const previewImg = document.getElementById('foodImagePreview');
+            if (this.value && this.value.trim() !== '') {
+                previewImg.src = this.value;
+                previewContainer.classList.remove('d-none');
+            } else {
+                previewContainer.classList.add('d-none');
+                previewImg.src = '';
+            }
+        });
+    }
+});
 </script>
 
 <style>
@@ -495,7 +595,6 @@ function fetchOFFData(barcode) {
     overflow: hidden;
     position: relative;
 }
-
 #interactive.viewport {
     position: relative;
     width: 100%;
@@ -504,18 +603,15 @@ function fetchOFFData(barcode) {
     justify-content: center;
     align-items: center;
 }
-
 #interactive.viewport video {
     width: 100% !important;
     height: auto !important;
     display: block;
 }
-
 #interactive div:has(video), 
 #interactive [id*="html5-qrcode"] {
     border-color: transparent !important;
 }
-
 #interactive div div,
 #interactive div span,
 #interactive canvas {
@@ -524,7 +620,6 @@ function fetchOFFData(barcode) {
     display: none !important;
     opacity: 0 !important;
 }
-
 #interactive.viewport::before {
     content: "";
     position: absolute;
@@ -539,7 +634,6 @@ function fetchOFFData(barcode) {
     z-index: 999; 
     pointer-events: none;
 }
-
 #interactive.viewport::after {
     content: "";
     position: absolute;
