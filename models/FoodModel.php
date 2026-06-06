@@ -81,36 +81,47 @@ public function create($category_id, $name, $calories, $protein, $carbs, $sugars
         ]);
     }
 
-    /**
-     * Vérifie si un aliment existe déjà par son code-barres ou son nom
-     * (Exclut l'ID actuel en cas de modification d'un produit existant)
-     */
-    public function checkDuplicate($name, $barcode = null, $excludeId = null) {
-        $sql = "SELECT COUNT(*) FROM food_items WHERE (LOWER(name) = LOWER(:name)";
-        
-        // Si un code-barres est fourni, on vérifie aussi s'il existe déjà
-        if (!empty($barcode)) {
-            $sql .= " OR barcode = :barcode";
-        }
-        
-        $sql .= ")";
-        
-        // En mode modification, on ne veut pas s'auto-bloquer si on ne change pas le nom/code-barres
+/**
+ * Vérifie si un aliment existe déjà par son code-barres ou son nom
+ * Renvoie le type de doublon trouvé, ou false si tout est OK
+ */
+public function checkDuplicate($name, $barcode = null, $excludeId = null) {
+    // 1. Priorité absolue : On vérifie si le code-barres est déjà utilisé par un AUTRE produit
+    if (!empty($barcode)) {
+        $sql = "SELECT COUNT(*) FROM food_items WHERE barcode = :barcode";
         if (!empty($excludeId)) {
             $sql .= " AND id != :excludeId";
         }
-
-        $stmt = $this->db->prepare($sql);
         
-        $params = ['name' => trim($name)];
-        if (!empty($barcode)) {
-            $params['barcode'] = trim($barcode);
-        }
+        $stmt = $this->db->prepare($sql);
+        $params = ['barcode' => trim($barcode)];
         if (!empty($excludeId)) {
             $params['excludeId'] = $excludeId;
         }
-
+        
         $stmt->execute($params);
-        return $stmt->fetchColumn() > 0; // Renvoie true si un doublon existe, false sinon
+        if ($stmt->fetchColumn() > 0) {
+            return 'barcode'; // C'est le code-barres qui est en doublon
+        }
     }
+
+    // 2. Deuxième rideau : On vérifie si le nom exact est déjà pris par un AUTRE produit
+    $sql = "SELECT COUNT(*) FROM food_items WHERE LOWER(name) = LOWER(:name)";
+    if (!empty($excludeId)) {
+        $sql .= " AND id != :excludeId";
+    }
+
+    $stmt = $this->db->prepare($sql);
+    $params = ['name' => trim($name)];
+    if (!empty($excludeId)) {
+        $params['excludeId'] = $excludeId;
+    }
+
+    $stmt->execute($params);
+    if ($stmt->fetchColumn() > 0) {
+        return 'name'; // C'est le nom qui est en doublon
+    }
+
+    return false; // Aucun doublon, la voie est libre !
+}
 }

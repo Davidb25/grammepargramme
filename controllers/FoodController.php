@@ -36,58 +36,61 @@ class FoodController {
             }
         }
 
-        // Si on reçoit un formulaire d'ajout ou de modification
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete_id'])) {
-            $id = filter_input(INPUT_POST, 'id', FILTER_VALIDATE_INT);
-            $name = strip_tags(trim($_POST['name'] ?? ''));
+    // Si on reçoit un formulaire d'ajout ou de modification
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete_id'])) {
+        $id = filter_input(INPUT_POST, 'id', FILTER_VALIDATE_INT);
+        $name = strip_tags(trim($_POST['name'] ?? ''));
+        
+        // Récupération de la catégorie
+        $category_id = filter_input(INPUT_POST, 'category_id', FILTER_VALIDATE_INT);
+
+        $calories = filter_input(INPUT_POST, 'calories', FILTER_VALIDATE_INT);
+        $protein = filter_input(INPUT_POST, 'protein', FILTER_VALIDATE_FLOAT);
+        $carbs = filter_input(INPUT_POST, 'carbs', FILTER_VALIDATE_FLOAT);
+        $sugars = filter_input(INPUT_POST, 'sugars', FILTER_VALIDATE_FLOAT);
+        $fat = filter_input(INPUT_POST, 'fat', FILTER_VALIDATE_FLOAT);
+        $saturated_fat = filter_input(INPUT_POST, 'saturated_fat', FILTER_VALIDATE_FLOAT);
+        $fibers = filter_input(INPUT_POST, 'fibers', FILTER_VALIDATE_FLOAT);
+        $salt = filter_input(INPUT_POST, 'salt', FILTER_VALIDATE_FLOAT);
+        $barcode = strip_tags(trim($_POST['barcode'] ?? ''));
+        $image_path = strip_tags(trim($_POST['image_path'] ?? '')); 
+        $off_url = strip_tags(trim($_POST['off_url'] ?? ''));       
+
+    if ($name && $calories !== false && $protein !== false && $carbs !== false && $sugars !== false && $fat !== false && $saturated_fat !== false && $fibers !== false && $salt !== false) {
             
-            // Récupération de la catégorie
-            $category_id = filter_input(INPUT_POST, 'category_id', FILTER_VALIDATE_INT);
+            // ON COMMANDE LA VÉRIFICATION SPÉCIFIQUE AU MODÈLE
+            $duplicateType = $this->foodModel->checkDuplicate($name, $barcode, $id);
 
-            $calories = filter_input(INPUT_POST, 'calories', FILTER_VALIDATE_INT);
-            $protein = filter_input(INPUT_POST, 'protein', FILTER_VALIDATE_FLOAT);
-            $carbs = filter_input(INPUT_POST, 'carbs', FILTER_VALIDATE_FLOAT);
-            $sugars = filter_input(INPUT_POST, 'sugars', FILTER_VALIDATE_FLOAT);
-            $fat = filter_input(INPUT_POST, 'fat', FILTER_VALIDATE_FLOAT);
-            $saturated_fat = filter_input(INPUT_POST, 'saturated_fat', FILTER_VALIDATE_FLOAT);
-            $fibers = filter_input(INPUT_POST, 'fibers', FILTER_VALIDATE_FLOAT);
-            $salt = filter_input(INPUT_POST, 'salt', FILTER_VALIDATE_FLOAT);
-            $barcode = strip_tags(trim($_POST['barcode'] ?? ''));
-            $image_path = strip_tags(trim($_POST['image_path'] ?? '')); 
-            $off_url = strip_tags(trim($_POST['off_url'] ?? ''));       
-
-            if ($name && $calories !== false && $protein !== false && $carbs !== false && $sugars !== false && $fat !== false && $saturated_fat !== false && $fibers !== false && $salt !== false) {
-                
-                // ON VÉRIFIE LES DOUBLONS STRICTS (NOM OU CODE-BARRES EXISTANT)
-                $isDuplicate = $this->foodModel->checkDuplicate($name, $barcode, $id);
-
-                if ($isDuplicate) {
-                    // Si doublon trouvé, on prépare le message rouge et on n'insère rien
-                    $error = "Impossible d'enregistrer : un aliment avec ce nom ou ce code-barres existe déjà dans ton catalogue !";
-                } else {
-                    // Si tout est au vert, on procède à l'enregistrement
-                    $result = false;
-                    $message = "";
-
-                    if ($id) {
-                        $result = $this->foodModel->update($id, $category_id, $name, $calories, $protein, $carbs, $sugars, $fat, $saturated_fat, $fibers, $salt, $barcode, $image_path, $off_url);
-                        $message = "L'aliment a été modifié avec succès !";
-                    } else {
-                        $result = $this->foodModel->create($category_id, $name, $calories, $protein, $carbs, $sugars, $fat, $saturated_fat, $fibers, $salt, $barcode, $image_path, $off_url);
-                        $message = "L'aliment \"" . htmlspecialchars($name) . "\" a été ajouté !";
-                    }
-
-                    // Vérification du statut de la requête de création/modification
-                    if ($result) {
-                        $success = $message;
-                    } else {
-                        $error = "Une erreur est survenue en base de données.";
-                    }
+            if ($duplicateType !== false) {
+                // Un doublon a été intercepté ! On aiguille le message selon la cause :
+                if ($duplicateType === 'barcode') {
+                    $error = "Impossible d'enregistrer : le code-barres <strong class='text-dark'>[" . htmlspecialchars($barcode) . "]</strong> est déjà attribué à un autre aliment dans ton catalogue !";
+                } else if ($duplicateType === 'name') {
+                    $error = "Impossible d'enregistrer : un aliment nommé <strong class='text-dark'>\"" . htmlspecialchars($name) . "\"</strong> existe déjà dans ton catalogue !";
                 }
             } else {
-                $error = "Veuillez remplir correctement tous les champs numériques.";
+                // Si tout est au vert (aucun doublon), on procède à l'enregistrement normal
+                $result = false;
+                $message = "";
+
+                if ($id) {
+                    $result = $this->foodModel->update($id, $category_id, $name, $calories, $protein, $carbs, $sugars, $fat, $saturated_fat, $fibers, $salt, $barcode, $image_path, $off_url);
+                    $message = "L'aliment a été modifié avec succès !";
+                } else {
+                    $result = $this->foodModel->create($category_id, $name, $calories, $protein, $carbs, $sugars, $fat, $saturated_fat, $fibers, $salt, $barcode, $image_path, $off_url);
+                    $message = "L'aliment \"" . htmlspecialchars($name) . "\" a été ajouté !";
+                }
+
+                if ($result) {
+                    $success = $message;
+                } else {
+                    $error = "Une erreur est survenue en base de données.";
+                }
             }
+        } else {
+            $error = "Veuillez remplir correctement tous les champs numériques.";
         }
+    }
 
         // Récupération de tous les aliments pour le tableau
         $foods = $this->foodModel->getAll();
