@@ -127,6 +127,28 @@
                 <div class="modal-body">
                     <input type="hidden" name="id" id="foodId">
                     
+                    <div class="mb-3 p-3 bg-light rounded border border-warning-subtle">
+                        <label class="form-label fw-bold text-dark"><i class="bi bi-upc-scan me-2 text-warning"></i>Scanner ou saisir un Code-barres</label>
+                        <div class="input-group">
+                            <input type="text" name="barcode" id="foodBarcode" class="form-control" placeholder="Scanner en premier pour pré-remplir" oninput="checkBarcodeLength(this.value)">
+                            <button class="btn btn-primary" type="button" id="btnScanCamera" onclick="startCameraScanner()" title="Scanner avec l'appareil photo">
+                                <i class="bi bi-camera"></i>
+                            </button>
+                        </div>
+                        <div id="apiLoader" class="text-primary small mt-1 d-none">
+                            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                            Recherche sur Open Food Facts...
+                        </div>
+                        <div id="apiFeedback" class="small mt-1 d-none"></div>
+                    </div>
+
+                    <div id="cameraScannerArea" class="mb-3 d-none text-center bg-dark rounded p-2 position-relative">
+                        <div id="interactive" class="viewport" style="width: 100%; max-height: 250px; overflow: hidden;"></div>
+                        <button type="button" class="btn btn-sm btn-danger mt-2" onclick="stopCameraScanner()">Arrêter la caméra</button>
+                    </div>
+                    
+                    <hr class="text-muted">
+
                     <div class="mb-3">
                         <label class="form-label fw-bold">Nom de l'aliment *</label>
                         <input type="text" name="name" id="foodName" class="form-control" required placeholder="ex: Skyr, Miel...">
@@ -170,25 +192,9 @@
                         </div>
                     </div>
 
-                    <div class="row">
-                        <div class="col-6 mb-3">
-                            <label class="form-label fw-semibold">Sel (g) *</label>
-                            <input type="number" step="0.01" name="salt" id="foodSalt" class="form-control" required>
-                        </div>
-                        <div class="col-6 mb-3">
-                            <label class="form-label fw-semibold">Code-barres</label>
-                            <div class="input-group">
-                                <input type="text" name="barcode" id="foodBarcode" class="form-control" placeholder="Optionnel">
-                                <button class="btn btn-outline-primary" type="button" id="btnScanCamera" onclick="startCameraScanner()" title="Scanner avec l'appareil photo">
-                                    <i class="bi bi-camera"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="cameraScannerArea" class="mb-3 d-none text-center bg-dark rounded p-2 position-relative">
-                        <div id="interactive" class="viewport" style="width: 100%; max-height: 250px; overflow: hidden;"></div>
-                        <button type="button" class="btn btn-sm btn-danger mt-2" onclick="stopCameraScanner()">Arrêter la caméra</button>
+                    <div class="mb-3 col-6">
+                        <label class="form-label fw-semibold">Sel (g) *</label>
+                        <input type="number" step="0.01" name="salt" id="foodSalt" class="form-control" required>
                     </div>
 
                     <div class="mb-3">
@@ -207,7 +213,7 @@
                         <i class="bi bi-trash"></i> Supprimer
                     </button>
                     <div>
-                        <button type="reset" id="btnReset" class="btn btn-outline-secondary">Vider</button>
+                        <button type="reset" id="btnReset" class="btn btn-outline-secondary" onclick="clearApiFeedback()">Vider</button>
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
                         <button type="submit" id="btnSubmit" class="btn btn-success">Enregistrer</button>
                     </div>
@@ -305,7 +311,9 @@ function startCameraScanner() {
             document.getElementById('foodBarcode').value = decodedText;
             if (navigator.vibrate) navigator.vibrate(100);
             stopCameraScanner();
-            alert("Produit scanné : " + decodedText);
+            
+            // On lance directement la recherche automatique avec le code scanné !
+            fetchOFFData(decodedText);
         },
         (errorMessage) => {
             console.log("Recherche en cours...");
@@ -372,6 +380,112 @@ function prepareDelete(id, name) {
     const deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
     deleteModal.show();
 }
+
+// --- LOGIQUE D'INTERROGATION OPEN FOOD FACTS ---
+
+// Nettoie les messages de retour de l'API
+function clearApiFeedback() {
+    const loader = document.getElementById('apiLoader');
+    const feedback = document.getElementById('apiFeedback');
+    loader.classList.add('d-none');
+    feedback.classList.add('d-none');
+    feedback.className = "small mt-1 d-none";
+}
+
+// Déclenche l'appel si la saisie fait mine d'être un code-barres standard (généralement entre 8 et 13 caractères)
+function checkBarcodeLength(barcode) {
+    const cleanedBarcode = barcode.trim();
+    if (cleanedBarcode.length === 13 || cleanedBarcode.length === 8) {
+        fetchOFFData(cleanedBarcode);
+    }
+}
+
+// Fonction maîtresse d'appel à l'API Open Food Facts
+function fetchOFFData(barcode) {
+    if (!barcode) return;
+
+    const loader = document.getElementById('apiLoader');
+    const feedback = document.getElementById('apiFeedback');
+    
+    // On affiche le spinner de chargement
+    loader.classList.remove('d-none');
+    feedback.classList.add('d-none');
+
+    // URL officielle de l'API Open Food Facts v2
+    const url = `https://fr.openfoodfacts.org/api/v2/product/${barcode}.json`;
+
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            loader.classList.add('d-none');
+            feedback.classList.remove('d-none');
+
+            if (data.status === 1 && data.product) {
+                const product = data.product;
+                const nutrients = product.nutriments || {};
+
+                // 1. Extraction des valeurs de l'API
+                const name = product.product_name_fr || product.product_name || '';
+                const kcal = nutrients['energy-kcal_100g'] || nutrients['energy-kcal_value'] || '';
+                const carbs = nutrients['carbohydrates_100g'];
+                const sugars = nutrients['sugars_100g'];
+                const fat = nutrients['fat_100g'];
+                const satFat = nutrients['saturated-fat_100g'];
+                const protein = nutrients['proteins_100g'];
+                const fibers = nutrients['fiber_100g'];
+                const salt = nutrients['salt_100g'];
+
+                // 2. Remplissage des inputs dans le formulaire
+                document.getElementById('foodName').value = name;
+                document.getElementById('foodCalories').value = kcal;
+                document.getElementById('foodCarbs').value = carbs !== undefined ? carbs : '';
+                document.getElementById('foodSugars').value = sugars !== undefined ? sugars : '0';
+                document.getElementById('foodFat').value = fat !== undefined ? fat : '';
+                document.getElementById('foodSaturatedFat').value = satFat !== undefined ? satFat : '0';
+                document.getElementById('foodProtein').value = protein !== undefined ? protein : '';
+                document.getElementById('foodFibers').value = fibers !== undefined ? fibers : '0.00';
+                document.getElementById('foodSalt').value = salt !== undefined ? salt : '0.00';
+                
+                // Remplissage des médias et fiches produits
+                const imgUrl = product.image_url || product.image_front_url || product.image_thumb_url || '';
+                document.getElementById('foodImage').value = imgUrl;
+                document.getElementById('foodUrl').value = `https://fr.openfoodfacts.org/produit/${barcode}`;
+
+                // 3. VÉRIFICATION DES DONNÉES MANQUANTES
+                // Si le nom, les calories ou l'une des macros clés est vide/indéfinie
+                if (!kcal || carbs === undefined || fat === undefined || protein === undefined) {
+                    feedback.className = "alert alert-warning mt-2 mb-0 py-2 d-block";
+                    feedback.innerHTML = `
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+                            <div>
+                                <strong>Produit trouvé, mais incomplet !</strong><br>
+                                Certaines valeurs nutritionnelles manquent sur Open Food Facts. Merci de les compléter manuellement.
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // Si tout est complet à 100%
+                    feedback.className = "alert alert-success mt-2 mb-0 py-2 d-block";
+                    feedback.innerHTML = "<i class='bi bi-check-circle-fill me-2'></i> Produit trouvé et importé avec succès !";
+                }
+
+            } else {
+                // Produit totalement inconnu sur Open Food Facts
+                feedback.className = "alert alert-danger mt-2 mb-0 py-2 d-block";
+                feedback.innerHTML = "<i class='bi bi-exclamation-circle-fill me-2'></i> Produit inconnu. Merci de saisir toutes les données à la main.";
+            }
+        })
+        .catch(error => {
+            console.error('Erreur lors de la récupération OFF:', error);
+            loader.classList.add('d-none');
+            feedback.classList.remove('d-none');
+            feedback.className = "alert alert-danger mt-2 mb-0 py-2 d-block";
+            feedback.innerHTML = "<i class='bi bi-wifi-off me-2'></i> Erreur réseau lors de la recherche du produit.";
+        });
+}
+
+
 </script>
 
 <style>
