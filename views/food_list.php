@@ -182,7 +182,7 @@
                     
                     <div class="mb-3">
                         <label class="form-label fw-bold">Calories (kcal) *</label>
-                        <input type="number" name="calories" id="foodCalories" class="form-control" required placeholder="ex: 64">
+                        <input type="number" step="any" name="calories" id="foodCalories" class="form-control" required>
                     </div>
 
                     <div class="row">
@@ -570,7 +570,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     // Gestion propre des décimales (Solution ultime type=text temporaire)
-    const inputs = document.querySelectorAll('#foodForm input[type="number"]');
+const inputs = document.querySelectorAll('#foodForm input[type="number"]');
     inputs.forEach(input => {
         input.addEventListener("focus", function() {
             this.type = "text";
@@ -604,7 +604,11 @@ document.addEventListener("DOMContentLoaded", function () {
             if (txtValue !== '') {
                 let num = parseFloat(txtValue);
                 if (!isNaN(num)) {
-                    this.value = num.toFixed(2);
+                    if (this.id === 'foodCalories') {
+                        this.value = Math.round(num);
+                    } else {
+                        this.value = num.toFixed(2);
+                    }
                 }
             }
             this.type = "number";

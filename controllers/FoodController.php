@@ -44,7 +44,8 @@ class FoodController {
         // Récupération de la catégorie
         $category_id = filter_input(INPUT_POST, 'category_id', FILTER_VALIDATE_INT);
 
-        $calories = filter_input(INPUT_POST, 'calories', FILTER_VALIDATE_INT);
+        $calories_raw = filter_input(INPUT_POST, 'calories', FILTER_VALIDATE_FLOAT);
+        $calories = ($calories_raw !== false && $calories_raw !== null) ? round($calories_raw) : false;
         $protein = filter_input(INPUT_POST, 'protein', FILTER_VALIDATE_FLOAT);
         $carbs = filter_input(INPUT_POST, 'carbs', FILTER_VALIDATE_FLOAT);
         $sugars = filter_input(INPUT_POST, 'sugars', FILTER_VALIDATE_FLOAT);
