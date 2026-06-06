@@ -265,6 +265,7 @@
 </div>
 
 <script src="https://unpkg.com/html5-qrcode"></script>
+
 <script>
 // --- LOGIQUE DU FORMULAIRE (AJOUT / MODIFICATION) ---
 function setupAddMode() {
@@ -280,6 +281,20 @@ function setupAddMode() {
     document.getElementById('foodImagePreviewContainer').classList.add('d-none');
     document.getElementById('foodImagePreview').src = '';
     clearApiFeedback();
+
+    // --- DETECTION MOBILE POUR OUVERTURE AUTO DE LA CAMERA ---
+    // On vérifie si l'appareil est un smartphone/tablette (iOS ou Android)
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+        // Si c'est un mobile, on attend un tout petit instant (150ms) que la modale 
+        // finisse de s'ouvrir graphiquement, puis on lance l'appareil photo
+        setTimeout(function() {
+            startCameraScanner();
+        }, 150);
+    }
+
+    document.getElementById('foodBarcode').removeAttribute('inputmode');
 }
 
 function setupEditMode(button) {
@@ -317,6 +332,8 @@ function setupEditMode(button) {
         previewContainer.classList.add('d-none');
         previewImg.src = '';
     }
+
+    document.getElementById('foodBarcode').removeAttribute('inputmode');
 }
 
 // --- LOGIQUE D'INTERROGATION OPEN FOOD FACTS ---
@@ -522,10 +539,27 @@ function deleteCurrentFoodFromModal() {
 // --- AUTO-FOCUS & REFORMATAGE INTELLIGENT DES SAISIES NUMÉRIQUES ---
 document.addEventListener("DOMContentLoaded", function () {
     
-    // Auto-focus sur le champ Code-barres dès l'ouverture de la modale
+    // Auto-focus intelligent sur le champ Code-barres dès l'ouverture de la modale
     const modalEl = document.getElementById('addFoodModal');
     modalEl.addEventListener('shown.bs.modal', function () {
-        document.getElementById('foodBarcode').focus();
+        const barcodeInput = document.getElementById('foodBarcode');
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        if (isMobile) {
+            // Sur mobile, on bloque le clavier virtuel AVANT de faire le focus
+            barcodeInput.setAttribute('inputmode', 'none');
+        } else {
+            // Sur PC, on s'assure que l'inputmode reste normal
+            barcodeInput.removeAttribute('inputmode');
+        }
+        
+        barcodeInput.focus();
+    });
+
+    // Si l'utilisateur clique manuellement dans le champ code-barres, on lui réactive le clavier
+    document.getElementById('foodBarcode').addEventListener('click', function() {
+        this.removeAttribute('inputmode');
+        this.focus();
     });
 
     // Gestion propre des décimales (Solution ultime type=text temporaire)
