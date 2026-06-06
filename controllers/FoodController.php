@@ -37,12 +37,12 @@ class FoodController {
         }
 
         // Si on reçoit un formulaire d'ajout ou de modification
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete_id'])) {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete_id'])) {
             $id = filter_input(INPUT_POST, 'id', FILTER_VALIDATE_INT);
             $name = strip_tags(trim($_POST['name'] ?? ''));
             
-            // 1. ON RÉCUPÈRE L'ID DE LA CATÉGORIE SÉLECTIONNÉE
-            $category_id = filter_input(INPUT_POST, 'category_id', FILTER_VALIDATE_INT); // <-- AJOUT ETAPE 2
+            // Récupération de la catégorie
+            $category_id = filter_input(INPUT_POST, 'category_id', FILTER_VALIDATE_INT);
 
             $calories = filter_input(INPUT_POST, 'calories', FILTER_VALIDATE_INT);
             $protein = filter_input(INPUT_POST, 'protein', FILTER_VALIDATE_FLOAT);
@@ -58,21 +58,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete_id'])) {
 
             if ($name && $calories !== false && $protein !== false && $carbs !== false && $sugars !== false && $fat !== false && $saturated_fat !== false && $fibers !== false && $salt !== false) {
                 
-                if ($id) {
-                    // 2. ON AJOUTE $category_id DANS L'UPDATE (généralement juste après l'id ou le nom, selon ton modèle)
-                    // Regarde bien l'ordre des arguments dans ton fichier models/FoodModel.php !
-                    $result = $this->foodModel->update($id, $category_id, $name, $calories, $protein, $carbs, $sugars, $fat, $saturated_fat, $fibers, $salt, $barcode, $image_path, $off_url);
-                    $message = "L'aliment a été modifié avec succès !";
-                } else {
-                    // 3. ON AJOUTE $category_id DANS LE CREATE
-                    $result = $this->foodModel->create($category_id, $name, $calories, $protein, $carbs, $sugars, $fat, $saturated_fat, $fibers, $salt, $barcode, $image_path, $off_url);
-                    $message = "L'aliment \"" . htmlspecialchars($name) . "\" a été ajouté !";
-                }
+                // ON VÉRIFIE LES DOUBLONS STRICTS (NOM OU CODE-BARRES EXISTANT)
+                $isDuplicate = $this->foodModel->checkDuplicate($name, $barcode, $id);
 
-                if ($result) {
-                    $success = $message;
+                if ($isDuplicate) {
+                    // Si doublon trouvé, on prépare le message rouge et on n'insère rien
+                    $error = "Impossible d'enregistrer : un aliment avec ce nom ou ce code-barres existe déjà dans ton catalogue !";
                 } else {
-                    $error = "Une erreur est survenue en base de données.";
+                    // Si tout est au vert, on procède à l'enregistrement
+                    $result = false;
+                    $message = "";
+
+                    if ($id) {
+                        $result = $this->foodModel->update($id, $category_id, $name, $calories, $protein, $carbs, $sugars, $fat, $saturated_fat, $fibers, $salt, $barcode, $image_path, $off_url);
+                        $message = "L'aliment a été modifié avec succès !";
+                    } else {
+                        $result = $this->foodModel->create($category_id, $name, $calories, $protein, $carbs, $sugars, $fat, $saturated_fat, $fibers, $salt, $barcode, $image_path, $off_url);
+                        $message = "L'aliment \"" . htmlspecialchars($name) . "\" a été ajouté !";
+                    }
+
+                    // Vérification du statut de la requête de création/modification
+                    if ($result) {
+                        $success = $message;
+                    } else {
+                        $error = "Une erreur est survenue en base de données.";
+                    }
                 }
             } else {
                 $error = "Veuillez remplir correctement tous les champs numériques.";

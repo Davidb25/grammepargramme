@@ -18,6 +18,13 @@
     </div>
 <?php endif; ?>
 
+<?php if (!empty($error)): ?>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i><?php echo $error; ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+<?php endif; ?>
+
 <div class="card shadow border-0">
     <div class="card-body p-0">
         <div class="table-responsive">
