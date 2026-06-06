@@ -68,58 +68,69 @@
                                     <?php endif; ?>
                                 </td>
 
-<td>
-            <span class="badge bg-light text-dark border">
-                <?php echo htmlspecialchars($food['category_name'] ?? 'Non classé'); ?>
-            </span>
-        </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border">
+                                        <?php echo htmlspecialchars($food['category_name'] ?? 'Non classé'); ?>
+                                    </span>
+                                </td>
 
-                                
                                 <td><span class="badge bg-primary"><?php echo $food['kcal_per_100g']; ?> kcal</span></td>
+                                
                                 <td><?php echo $food['proteins_per_100g']; ?> g</td>
+                                
                                 <td>
                                     <strong><?php echo $food['carbohydrates_per_100g']; ?> g</strong>
                                     <br><small class="text-muted">dont : <?php echo $food['sugar_per_100g']; ?> g</small>
                                 </td>
+                                
                                 <td>
                                     <strong><?php echo $food['fat_per_100g']; ?> g</strong>
                                     <br><small class="text-muted">dont : <?php echo $food['saturated_fat_per_100g']; ?> g</small>
                                 </td>
+                                
                                 <td><?php echo $food['fibers_per_100g']; ?> g</td>
+                                
                                 <td><?php echo $food['salt_per_100g']; ?> g</td>
                                 
-                                <td class="text-end">
-                                    <?php if (!empty($food['off_url'])): ?>
-                                        <a href="<?php echo htmlspecialchars($food['off_url']); ?>" target="_blank" class="btn btn-sm btn-outline-info me-1" title="Voir sur Open Food Facts">
-                                            <i class="bi bi-globe"></i>
-                                        </a>
-                                    <?php endif; ?>
-                                    <button class="btn btn-sm btn-outline-warning me-1" title="Favoris">
-                                        <i class="bi bi-star"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-secondary me-1" title="Modifier"
-                                            data-bs-toggle="modal" 
-                                            data-bs-target="#addFoodModal"
-                                            onclick="setupEditMode(this)"
-                                            data-id="<?php echo $food['id']; ?>"
-                                            data-name="<?php echo htmlspecialchars($food['name']); ?>"
-                                            data-calories="<?php echo $food['kcal_per_100g']; ?>"
-                                            data-protein="<?php echo $food['proteins_per_100g']; ?>"
-                                            data-carbs="<?php echo $food['carbohydrates_per_100g']; ?>"
-                                            data-sugars="<?php echo $food['sugar_per_100g']; ?>"
-                                            data-fat="<?php echo $food['fat_per_100g']; ?>"
-                                            data-saturated_fat="<?php echo $food['saturated_fat_per_100g']; ?>"
-                                            data-fibers="<?php echo $food['fibers_per_100g']; ?>"
-                                            data-salt="<?php echo $food['salt_per_100g']; ?>"
-                                            data-barcode="<?php echo htmlspecialchars($food['barcode'] ?? ''); ?>"
-                                            data-image="<?php echo htmlspecialchars($food['image_path'] ?? ''); ?>"
-                                            data-url="<?php echo htmlspecialchars($food['off_url'] ?? ''); ?>"
-                                            data-category="<?php echo $food['category_id'] ?? ''; ?>">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger" onclick="confirmDelete(<?= $food['id'] ?>, '<?= htmlspecialchars($food['name'], ENT_QUOTES) ?>')" title="Supprimer l'aliment">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
+                                <td class="align-middle text-end" style="width: 140px;">
+                                    <div class="d-flex justify-content-end gap-1">
+                                        
+                                        <?php if (!empty($food['off_url'])): ?>
+                                            <a href="<?php echo htmlspecialchars($food['off_url']); ?>" target="_blank" class="btn btn-sm btn-outline-info" title="Voir sur Open Food Facts">
+                                                <i class="bi bi-globe"></i>
+                                            </a>
+                                        <?php endif; ?>
+
+                                        <button class="btn btn-sm btn-outline-warning" title="Favoris">
+                                            <i class="bi bi-star"></i>
+                                        </button>
+
+                                        <button class="btn btn-sm btn-outline-primary" title="Modifier"
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#addFoodModal"
+                                                onclick="setupEditMode(this)"
+                                                data-id="<?php echo $food['id']; ?>"
+                                                data-name="<?php echo htmlspecialchars($food['name']); ?>"
+                                                data-calories="<?php echo $food['kcal_per_100g']; ?>"
+                                                data-protein="<?php echo $food['proteins_per_100g']; ?>"
+                                                data-carbs="<?php echo $food['carbohydrates_per_100g']; ?>"
+                                                data-sugars="<?php echo $food['sugar_per_100g']; ?>"
+                                                data-fat="<?php echo $food['fat_per_100g']; ?>"
+                                                data-saturated_fat="<?php echo $food['saturated_fat_per_100g']; ?>"
+                                                data-fibers="<?php echo $food['fibers_per_100g']; ?>"
+                                                data-salt="<?php echo $food['salt_per_100g']; ?>"
+                                                data-barcode="<?php echo htmlspecialchars($food['barcode'] ?? ''); ?>"
+                                                data-image="<?php echo htmlspecialchars($food['image_path'] ?? ''); ?>"
+                                                data-url="<?php echo htmlspecialchars($food['off_url'] ?? ''); ?>"
+                                                data-category="<?php echo $food['category_id'] ?? ''; ?>">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+
+                                        <button class="btn btn-sm btn-outline-danger" onclick="confirmDelete(<?= $food['id'] ?>, '<?= htmlspecialchars($food['name'], ENT_QUOTES) ?>')" title="Supprimer l'aliment">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+
+                                    </div>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
