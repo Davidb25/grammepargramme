@@ -33,6 +33,7 @@
                     <tr>
                         <th style="width: 60px;">Visuel</th>
                         <th>Nom de l'aliment</th>
+                        <th>Catégorie</th>
                         <th>Calories (100g)</th>
                         <th>Protéines</th>
                         <th>Glucides <small>(sucres)</small></th>
@@ -66,6 +67,13 @@
                                         <br><small class="text-muted fw-normal"><i class="bi bi-upc-scan me-1"></i><?php echo htmlspecialchars($food['barcode']); ?></small>
                                     <?php endif; ?>
                                 </td>
+
+<td>
+            <span class="badge bg-light text-dark border">
+                <?php echo htmlspecialchars($food['category_name'] ?? 'Non classé'); ?>
+            </span>
+        </td>
+
                                 
                                 <td><span class="badge bg-primary"><?php echo $food['kcal_per_100g']; ?> kcal</span></td>
                                 <td><?php echo $food['proteins_per_100g']; ?> g</td>

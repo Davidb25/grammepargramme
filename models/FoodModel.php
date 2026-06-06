@@ -10,10 +10,16 @@ class FoodModel {
     }
 
     public function getAll() {
-        $query = "SELECT * FROM " . $this->table . " ORDER BY name ASC";
-        $stmt = $this->db->prepare($query);
+        // On sélectionne toutes les colonnes de l'aliment (f.*) 
+        // ET le nom de la catégorie (c.name) renommé en category_name
+        $sql = "SELECT f.*, c.name AS category_name 
+                FROM food_items f
+                LEFT JOIN categories c ON f.category_id = c.id
+                ORDER BY f.name ASC";
+                
+        $stmt = $this->db->prepare($sql);
         $stmt->execute();
-        return $stmt->fetchAll();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function getById($id) {
