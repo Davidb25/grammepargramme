@@ -51,12 +51,19 @@
                     <?php else: ?>
                         <?php foreach ($foods as $food): ?>
                             <tr>
-                                <td>
+
+                                <td class="align-middle text-center" style="width: 60px;">
                                     <?php if (!empty($food['image_path'])): ?>
-                                        <img src="<?php echo htmlspecialchars($food['image_path']); ?>" alt="Aliment" class="img-thumbnail" style="width: 45px; height: 45px; object-fit: cover;">
+                                        <img src="<?php echo htmlspecialchars($food['image_path']); ?>" 
+                                            class="img-thumbnail img-zoom-click" 
+                                            style="width: 45px; height: 45px; object-fit: cover; cursor: pointer;" 
+                                            alt="Visuel"
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#imagePreviewModal"
+                                            onclick="document.getElementById('modalLargeImage').src = this.src;">
                                     <?php else: ?>
-                                        <div class="bg-light text-muted d-flex align-items-center justify-content-center rounded border" style="width: 45px; height: 45px;">
-                                            <i class="bi bi-camera small"></i>
+                                        <div class="bg-light rounded d-flex align-middle justify-content-center m-auto border" style="width: 45px; height: 45px;">
+                                            <i class="bi bi-camera text-muted m-auto"></i>
                                         </div>
                                     <?php endif; ?>
                                 </td>
@@ -170,7 +177,7 @@
 
                     <div id="foodImagePreviewContainer" class="mb-3 text-center d-none">
                         <label class="form-label d-block fw-semibold text-muted">Visuel de l'aliment</label>
-                        <img id="foodImagePreview" src="" alt="Aperçu" class="img-thumbnail shadow-sm" style="max-height: 120px; object-fit: cover;">
+                        <img id="foodImagePreview" src="" alt="Aperçu" class="img-thumbnail shadow-sm" style="max-height: 120px; max-width: 100px; object-fit: cover;">
                     </div>
 
                     <div id="cameraScannerArea" class="mb-3 d-none text-center bg-dark rounded p-2 position-relative">
@@ -243,12 +250,12 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-semibold text-primary">Lien URL de la Photo (Open Food Facts ou Web)</label>
+                        <label class="form-label fw-semibold">Lien URL de la Photo (Open Food Facts ou Web)</label>
                         <input type="text" name="image_path" id="foodImage" class="form-control" placeholder="https://images.openfoodfacts.org/...jpg">
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-semibold text-info">Lien de la Fiche Produit (En savoir plus)</label>
+                        <label class="form-label fw-semibold">Lien de la Fiche Produit (En savoir plus)</label>
                         <input type="text" name="off_url" id="foodUrl" class="form-control" placeholder="https://fr.openfoodfacts.org/produit/...">
                     </div>
                 </div>
@@ -264,6 +271,24 @@
                     </div>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="imagePreviewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content shadow-lg border-0 bg-white p-0 position-relative rounded">
+            
+            <button type="button" 
+                    class="btn-close position-absolute top-0 end-0 m-3 z-3 bg-white p-2 rounded-circle border shadow-sm" 
+                    data-bs-dismiss="modal" 
+                    aria-label="Close"
+                    style="opacity: 0.8;"></button>
+            
+            <div class="modal-body p-0 text-center overflow-hidden rounded">
+                <img src="" id="modalLargeImage" class="img-fluid d-block w-100" alt="Plein écran" style="max-height: 75vh; object-fit: contain;">
+            </div>
+
         </div>
     </div>
 </div>

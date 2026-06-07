@@ -1,0 +1,18 @@
+/* Effet de zoom sur l'aperçu de l'image dans la modal d'édition */
+#foodImagePreview {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+#foodImagePreview:hover {
+    transform: scale(3.50);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    position: relative;
+    z-index: 5; /* Force l'image zoomée à passer au-dessus des champs */
+}
+
+/* Optionnel : Léger effet d'opacité au survol des vignettes du tableau pour faire comprendre que c'est cliquable */
+.img-zoom-click {
+    transition: opacity 0.2s ease-in-out;
+}
+.img-zoom-click:hover {
+    opacity: 0.65;
+}
