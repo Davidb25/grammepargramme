@@ -506,12 +506,10 @@ function fetchOFFData(barcode) {
                 document.getElementById('foodFibers').value = formatMacro(fibers) || '0.00';
                 document.getElementById('foodSalt').value = formatMacro(salt) || '0.00';
                 
-                // Extraction de la photo
                 const imgUrl = product.image_url || product.image_front_url || product.image_thumb_url || '';
                 document.getElementById('foodImage').value = imgUrl;
                 document.getElementById('foodUrl').value = `https://fr.openfoodfacts.org/produit/${barcode}`;
 
-                // Affichage en direct de l'image scannée
                 const previewContainer = document.getElementById('foodImagePreviewContainer');
                 const previewImg = document.getElementById('foodImagePreview');
                 if (imgUrl && imgUrl.trim() !== '') {
@@ -521,6 +519,43 @@ function fetchOFFData(barcode) {
                     previewContainer.classList.add('d-none');
                     previewImg.src = '';
                 }
+
+                // =============================================================
+                // 🧠 NOUVEAU : SYSTÈME DE CATÉGORISATION AUTOMATIQUE SMART
+                // =============================================================
+                let detectedCategoryId = ""; // Par défaut, on ne touche à rien
+                
+                // Récupération de la chaîne de toutes les catégories du produit
+                const offCategories = (product.categories || "").toLowerCase();
+                
+                // Dictionnaire de détection par mots-clés prioritaires
+                if (offCategories.includes("boisson") || offCategories.includes("beverage") || offCategories.includes("jus de") || offCategories.includes("soda") || offCategories.includes("café") || offCategories.includes("thé")) {
+                    detectedCategoryId = "7"; // Boissons
+                } else if (offCategories.includes("lait") || offCategories.includes("yaourt") || offCategories.includes("fromage") || offCategories.includes("skyr") || offCategories.includes("dairy") || offCategories.includes("crème fraîche")) {
+                    detectedCategoryId = "2"; // Produits Laitiers
+                } else if (offCategories.includes("viande") || offCategories.includes("poulet") || offCategories.includes("bœuf") || offCategories.includes("poisson") || offCategories.includes("thon") || offCategories.includes("œuf") || offCategories.includes("meat") || offCategories.includes("seafood")) {
+                    detectedCategoryId = "3"; // Viandes / Poissons / Œufs
+                } else if (offCategories.includes("huile") || offCategories.includes("beurre") || offCategories.includes("margarine") || offCategories.includes("amande") || offCategories.includes("noix") || offCategories.includes("avocat") || offCategories.includes("fats")) {
+                    detectedCategoryId = "4"; // Matières Grasses
+                } else if (offCategories.includes("fruit") || offCategories.includes("légume") || offCategories.includes("tomate") || offCategories.includes("salade") || offCategories.includes("plant-based foods")) {
+                    // Attention à ne pas confondre "jus de fruit" (déjà traité dans Boissons en premier)
+                    detectedCategoryId = "5"; // Fruits / Légumes
+                } else if (offCategories.includes("chocolat") || offCategories.includes("biscuit") || offCategories.includes("bonbon") || offCategories.includes("miel") || offCategories.includes("confiture") || offCategories.includes("sucre") || offCategories.includes("snack")) {
+                    detectedCategoryId = "6"; // Produits Sucrés
+                } else if (offCategories.includes("riz") || offCategories.includes("pâte") || offCategories.includes("pain") || offCategories.includes("avoine") || offCategories.includes("céréale") || offCategories.includes("lentille") || offCategories.includes("féculent") || offCategories.includes("cereals") || offCategories.includes("blé") || offCategories.includes("ebly") || offCategories.includes("ébly")) {
+                    detectedCategoryId = "1"; // Féculents / Céréales
+                } else if (offCategories.includes("plat préparé") || offCategories.includes("pizza") || offCategories.includes("sandwich") || offCategories.includes("meals")) {
+                    detectedCategoryId = "8"; // Plats préparés / Autres
+                }
+
+                // Si le traducteur a trouvé une catégorie, on la sélectionne automatiquement dans le <select>
+                if (detectedCategoryId !== "") {
+                    document.getElementById('foodCategoryId').value = detectedCategoryId;
+                } else {
+                    // Si OFF ne renvoie rien ou si aucun mot-clé ne correspond, on met "Plats préparés / Autres" par défaut
+                    document.getElementById('foodCategoryId').value = "8";
+                }
+                // =============================================================
 
                 if (!kcal || carbs === undefined || fat === undefined || protein === undefined) {
                     feedback.className = "alert alert-warning mt-2 mb-0 py-2 d-block";
@@ -540,6 +575,7 @@ function fetchOFFData(barcode) {
             } else {
                 feedback.className = "alert alert-danger mt-2 mb-0 py-2 d-block";
                 feedback.innerHTML = "<i class='bi bi-exclamation-circle-fill me-2'></i> Produit inconnu. Saisie 100% manuelle.";
+                document.getElementById('foodCategoryId').value = "8"; // Catégorie Autres par défaut en cas d'inconnu
             }
         })
         .catch(error => {
@@ -550,7 +586,6 @@ function fetchOFFData(barcode) {
             feedback.innerHTML = "<i class='bi bi-wifi-off me-2'></i> Erreur réseau.";
         });
 }
-
 // --- LOGIQUE DU SCANNER PHOTO ---
 let html5QrCode = null;
 
