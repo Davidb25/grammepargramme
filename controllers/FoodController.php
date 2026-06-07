@@ -1,4 +1,8 @@
 <?php
+
+// pour les test de désignation modifier le paramètre de getAll(...)
+
+
 // controllers/FoodController.php
 
 require_once 'config/database.php';
@@ -14,7 +18,16 @@ class FoodController {
         $this->foodModel = new FoodModel($this->db);
     }
 
-    public function indexAction() {
+public function indexAction() {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        // On récupère les messages flash s'il y en a en session, puis on les vide
+        $success = $_SESSION['flash_success'] ?? '';
+        $error = $_SESSION['flash_error'] ?? '';
+        unset($_SESSION['flash_success'], $_SESSION['flash_error']);
+
         $success = '';
         $error = '';
 
@@ -30,16 +43,22 @@ class FoodController {
                 $stmt = $db->prepare("DELETE FROM food_items WHERE id = :id");
                 $stmt->execute(['id' => $delete_id]);
                 
-                $success = "Aliment supprimé avec succès !";
+                $_SESSION['flash_success'] = "Aliment supprimé avec succès !";
+                header('Location: index.php?action=foods');
+                exit();
+                
             } catch (PDOException $e) {
                 $error = "Erreur lors de la suppression : " . $e->getMessage();
             }
         }
 
-    // Si on reçoit un formulaire d'ajout ou de modification
+// Si on reçoit un formulaire d'ajout ou de modification
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['delete_id'])) {
         $id = filter_input(INPUT_POST, 'id', FILTER_VALIDATE_INT);
         $name = strip_tags(trim($_POST['name'] ?? ''));
+        
+        // NOUVEAU : Récupération du surnom personnalisé
+        $custom_name = strip_tags(trim($_POST['custom_name'] ?? ''));
         
         // Récupération de la catégorie
         $category_id = filter_input(INPUT_POST, 'category_id', FILTER_VALIDATE_INT);
@@ -57,35 +76,44 @@ class FoodController {
         $image_path = strip_tags(trim($_POST['image_path'] ?? '')); 
         $off_url = strip_tags(trim($_POST['off_url'] ?? ''));       
 
-    if ($name && $calories !== false && $protein !== false && $carbs !== false && $sugars !== false && $fat !== false && $saturated_fat !== false && $fibers !== false && $salt !== false) {
+        if ($name && $calories !== false && $protein !== false && $carbs !== false && $sugars !== false && $fat !== false && $saturated_fat !== false && $fibers !== false && $salt !== false) {
             
             // ON COMMANDE LA VÉRIFICATION SPÉCIFIQUE AU MODÈLE
             $duplicateType = $this->foodModel->checkDuplicate($name, $barcode, $id);
 
             if ($duplicateType !== false) {
-                // Un doublon a été intercepté ! On aiguille le message selon la cause :
                 if ($duplicateType === 'barcode') {
                     $error = "Impossible d'enregistrer : le code-barres <strong class='text-dark'>[" . htmlspecialchars($barcode) . "]</strong> est déjà attribué à un autre aliment dans ton catalogue !";
                 } else if ($duplicateType === 'name') {
                     $error = "Impossible d'enregistrer : un aliment nommé <strong class='text-dark'>\"" . htmlspecialchars($name) . "\"</strong> existe déjà dans ton catalogue !";
                 }
             } else {
-                // Si tout est au vert (aucun doublon), on procède à l'enregistrement normal
                 $result = false;
                 $message = "";
 
                 if ($id) {
                     $result = $this->foodModel->update($id, $category_id, $name, $calories, $protein, $carbs, $sugars, $fat, $saturated_fat, $fibers, $salt, $barcode, $image_path, $off_url);
                     $message = "L'aliment a été modifié avec succès !";
+                    $foodItemId = $id; // L'ID existe déjà
                 } else {
                     $result = $this->foodModel->create($category_id, $name, $calories, $protein, $carbs, $sugars, $fat, $saturated_fat, $fibers, $salt, $barcode, $image_path, $off_url);
                     $message = "L'aliment \"" . htmlspecialchars($name) . "\" a été ajouté !";
+                    // Si c'est une création, on récupère le dernier ID généré par PDO
+                    $foodItemId = $this->db->lastInsertId(); 
                 }
 
                 if ($result) {
-                    $success = $message;
+                    // Une fois l'aliment de base enregistré, on gère son surnom perso
+                    $this->foodModel->saveCustomName($foodItemId, $custom_name);
+                    $_SESSION['flash_success'] = $message;
+                    
+                    // REDIRECTION PROPRE : On recharge la page à vide (en méthode GET)
+                    header('Location: index.php?action=foods'); // Ajuste l'URL selon tes routes (ex: index.php ou juste de quoi recharger ton contrôleur)
+                    exit();
                 } else {
-                    $error = "Une erreur est survenue en base de données.";
+                    $_SESSION['flash_error'] = "Une erreur est survenue en base de données.";
+                    header('Location: index.php?action=foods');
+                    exit();
                 }
             }
         } else {
@@ -94,7 +122,7 @@ class FoodController {
     }
 
         // Récupération de tous les aliments pour le tableau
-        $foods = $this->foodModel->getAll();
+        $foods = $this->foodModel->getAll(1);
 
         // ===================================================================
         // <-- ETAPE 2 : RÉCUPÉRATION DES CATÉGORIES POUR LA LISTE DÉROULANTE

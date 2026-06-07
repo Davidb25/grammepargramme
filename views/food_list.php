@@ -26,6 +26,21 @@
 <?php endif; ?>
 
 <div class="card shadow border-0">
+    <div class="mb-3">
+        <div class="input-group shadow-sm">
+            <span class="input-group-text bg-white border-end-0 text-muted">
+                <i class="bi bi-search"></i>
+            </span>
+            <input type="text" 
+                id="globalSearchInput" 
+                class="form-control border-start-0 ps-0" 
+                placeholder="Rechercher un aliment par son nom, son code-barres ou ton surnom perso..." 
+                onkeyup="filterFoodTable()">
+            <button class="btn btn-outline-secondary" type="button" onclick="clearSearch()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+    </div>
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
@@ -68,8 +83,14 @@
                                     <?php endif; ?>
                                 </td>
                                 
-                                <td class="fw-bold text-dark">
-                                    <?php echo htmlspecialchars($food['name']); ?>
+                                <td class="text-dark">
+                                    <?php if (!empty($food['custom_name'])): ?>
+                                        <span class="fw-bold text-primary"><i class="bi bi-tag-fill me-1 small"></i><?php echo htmlspecialchars($food['custom_name']); ?></span>
+                                        <br><small class="text-muted fw-normal">Nom d'origine : <?php echo htmlspecialchars($food['name']); ?></small>
+                                    <?php else: ?>
+                                        <span class="fw-bold"><?php echo htmlspecialchars($food['name']); ?></span>
+                                    <?php endif; ?>
+
                                     <?php if (!empty($food['barcode'])): ?>
                                         <br><small class="text-muted fw-normal"><i class="bi bi-upc-scan me-1"></i><?php echo htmlspecialchars($food['barcode']); ?></small>
                                     <?php endif; ?>
@@ -116,6 +137,7 @@
                                                 data-bs-toggle="modal" 
                                                 data-bs-target="#addFoodModal"
                                                 onclick="setupEditMode(this)"
+                                                data-custom-name="<?php echo htmlspecialchars($food['custom_name'] ?? ''); ?>"
                                                 data-id="<?php echo $food['id']; ?>"
                                                 data-name="<?php echo htmlspecialchars($food['name']); ?>"
                                                 data-calories="<?php echo $food['kcal_per_100g']; ?>"
@@ -186,6 +208,12 @@
                     </div>
 
                     <hr class="text-muted">
+
+                    <div class="mb-3 p-3 bg-light rounded border border-primary-subtle">
+                        <label class="form-label fw-bold text-primary"><i class="bi bi-person-heart me-2"></i>Mon Surnom Perso (Désignation privée)</label>
+                        <input type="text" name="custom_name" id="foodCustomName" class="form-control border-primary-subtle" placeholder="ex: Mon Fromage Blanc du Matin, Petit-déjeuner...">
+                        <div class="form-text text-muted small">Ce nom n'est visible que par toi pour tes recherches rapides.</div>
+                    </div>
 
                     <div class="mb-3">
                         <label class="form-label fw-bold">Nom de l'aliment *</label>
@@ -327,6 +355,7 @@ function setupAddMode() {
     document.getElementById('btnSubmit').className = "btn btn-success";
     document.getElementById('btnReset').style.display = "inline-block";
     document.getElementById('btnDeleteFromModal').style.display = "none";
+    document.getElementById('foodCustomName').value = '';
     
     // On cache l'aperçu de l'image en mode ajout pur
     document.getElementById('foodImagePreviewContainer').classList.add('d-none');
@@ -346,6 +375,7 @@ function setupAddMode() {
     }
 
     document.getElementById('foodBarcode').removeAttribute('inputmode');
+
 }
 
 function setupEditMode(button) {
@@ -367,6 +397,7 @@ function setupEditMode(button) {
     document.getElementById('foodFibers').value = button.getAttribute('data-fibers');
     document.getElementById('foodSalt').value = button.getAttribute('data-salt');
     document.getElementById('foodBarcode').value = button.getAttribute('data-barcode');
+    document.getElementById('foodCustomName').value = button.getAttribute('data-custom-name') || '';
     
     const imgPath = button.getAttribute('data-image');
     document.getElementById('foodImage').value = imgPath || '';
@@ -675,6 +706,46 @@ const inputs = document.querySelectorAll('#foodForm input[type="number"]');
         });
     }
 });
+
+// Fonction pour filtrer le tableau en temps réel
+function filterFoodTable() {
+    const input = document.getElementById('globalSearchInput');
+    const filter = input.value.toLowerCase().trim();
+    const table = document.querySelector('.table tbody');
+    const rows = table.getElementsByTagName('tr');
+
+    // Si le tableau est vide (ex: aucun aliment), on ne fait rien
+    if (rows.length === 1 && rows[0].cells.length === 1) return;
+
+    for (let i = 0; i < rows.length; i++) {
+        // On récupère le texte de la cellule du Nom (colonne index 1)
+        const nameCell = rows[i].getElementsByTagName('td')[1];
+        
+        if (nameCell) {
+            const textValue = nameCell.textContent || nameCell.innerText;
+            
+            // Si le texte de la cellule contient la recherche, on affiche la ligne, sinon on la cache
+            if (textValue.toLowerCase().indexOf(filter) > -1) {
+                rows[i].style.display = "";
+            } else {
+                rows[i].style.display = "none";
+            }
+        }
+    }
+}
+
+// Fonction pour vider la recherche proprement
+function clearSearch() {
+    const input = document.getElementById('globalSearchInput');
+    input.value = '';
+    filterFoodTable();
+    input.focus();
+}
+
+
+
+
+
 </script>
 
 <style>
