@@ -277,7 +277,7 @@
 
 <div class="modal fade" id="imagePreviewModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-sm">
-        <div class="modal-content shadow-lg border-0 bg-white p-0 position-relative rounded">
+        <div class="modal-content shadow-lg bg-white p-0 position-relative rounded"  style="border: solid 4px rgb(255, 255, 255);">
             
             <button type="button" 
                     class="btn-close position-absolute top-0 end-0 m-3 z-3 bg-white p-2 rounded-circle border shadow-sm" 
