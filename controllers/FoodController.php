@@ -19,19 +19,21 @@ class FoodController {
     }
 
 public function indexAction() {
+
+        // 1. On démarre la session si ce n'est pas déjà fait
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
 
-        // On récupère les messages flash s'il y en a en session, puis on les vide
+        // 2. On récupère les messages stockés en session (mémoire flash)
         $success = $_SESSION['flash_success'] ?? '';
         $error = $_SESSION['flash_error'] ?? '';
+
+        // 3. CRUCIAL : On vide tout de suite la session pour que le message 
+        // ne se réaffiche pas indéfiniment si on change de page ensuite !
         unset($_SESSION['flash_success'], $_SESSION['flash_error']);
 
-        $success = '';
-        $error = '';
-
-        // Si on reçoit une demande de suppression classique
+        // Si on reçoit une demande de suppression classique...
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
             $delete_id = intval($_POST['delete_id']);
             
@@ -83,10 +85,14 @@ public function indexAction() {
 
             if ($duplicateType !== false) {
                 if ($duplicateType === 'barcode') {
-                    $error = "Impossible d'enregistrer : le code-barres <strong class='text-dark'>[" . htmlspecialchars($barcode) . "]</strong> est déjà attribué à un autre aliment dans ton catalogue !";
+                    $_SESSION['flash_error'] = "Impossible d'enregistrer : le code-barres <strong class='text-dark'>[" . htmlspecialchars($barcode) . "]</strong> est déjà attribué à un autre aliment dans ton catalogue !";
                 } else if ($duplicateType === 'name') {
-                    $error = "Impossible d'enregistrer : un aliment nommé <strong class='text-dark'>\"" . htmlspecialchars($name) . "\"</strong> existe déjà dans ton catalogue !";
+                    $_SESSION['flash_error'] = "Impossible d'enregistrer : un aliment nommé <strong class='text-dark'>\"" . htmlspecialchars($name) . "\"</strong> existe déjà dans ton catalogue !";
                 }
+                
+                // On redirige et on COUPE le script !
+                header('Location: index.php?action=foods');
+                exit();
             } else {
                 $result = false;
                 $message = "";
@@ -102,13 +108,12 @@ public function indexAction() {
                     $foodItemId = $this->db->lastInsertId(); 
                 }
 
+                // --- ICI ON FERME PROPREMENT LA LOGIQUE DU ELSE ---
                 if ($result) {
                     // Une fois l'aliment de base enregistré, on gère son surnom perso
                     $this->foodModel->saveCustomName($foodItemId, $custom_name);
                     $_SESSION['flash_success'] = $message;
-                    
-                    // REDIRECTION PROPRE : On recharge la page à vide (en méthode GET)
-                    header('Location: index.php?action=foods'); // Ajuste l'URL selon tes routes (ex: index.php ou juste de quoi recharger ton contrôleur)
+                    header('Location: index.php?action=foods');
                     exit();
                 } else {
                     $_SESSION['flash_error'] = "Une erreur est survenue en base de données.";
