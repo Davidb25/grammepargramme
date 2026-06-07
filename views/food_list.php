@@ -416,6 +416,15 @@ function setupEditMode(button) {
     }
 
     document.getElementById('foodBarcode').removeAttribute('inputmode');
+    
+// --- SÉCURITÉ DE MODIFICATION ---
+    // Si l'aliment qu'on charge contient un lien Open Food Facts, on verrouille les champs officiels
+    const currentUrl = button.getAttribute('data-url') || '';
+    if (currentUrl.includes('openfoodfacts.org')) {
+        setFoodFieldsReadOnly(true);
+    } else {
+        setFoodFieldsReadOnly(false);
+    }
 }
 
 // --- LOGIQUE D'INTERROGATION OPEN FOOD FACTS ---
@@ -483,7 +492,18 @@ function fetchOFFData(barcode) {
                 const product = data.product;
                 const nutrients = product.nutriments || {};
 
-                const name = product.product_name_fr || product.product_name || '';
+                let rawName = product.product_name_fr || product.product_name || '';
+                const brand = product.brands || '';
+
+                // On assemble la marque et le nom si la marque n'est pas déjà dans le nom
+                let finalName = rawName;
+                if (brand && !rawName.toLowerCase().includes(brand.toLowerCase())) {
+                    finalName = brand + " - " + rawName;
+                }
+
+                // 3. On injecte le résultat dans le champ du formulaire
+                document.getElementById('foodName').value = finalName;
+
                 const kcal = nutrients['energy-kcal_100g'] || nutrients['energy-kcal_value'] || '';
                 const carbs = nutrients['carbohydrates_100g'];
                 const sugars = nutrients['sugars_100g'];
@@ -492,8 +512,7 @@ function fetchOFFData(barcode) {
                 const protein = nutrients['proteins_100g'];
                 const fibers = nutrients['fiber_100g'];
                 const salt = nutrients['salt_100g'];
-
-                document.getElementById('foodName').value = name;
+;
                 document.getElementById('foodCalories').value = kcal ? Math.round(kcal) : '';
 
                 const formatMacro = (val) => (val !== undefined && val !== '') ? parseFloat(val).toFixed(2) : '';
@@ -568,14 +587,19 @@ function fetchOFFData(barcode) {
                             </div>
                         </div>
                     `;
+                    setFoodFieldsReadOnly(false);
                 } else {
                     feedback.className = "alert alert-success mt-2 mb-0 py-2 d-block";
                     feedback.innerHTML = "<i class='bi bi-check-circle-fill me-2'></i> Produit importé avec succès !";
+                    
+                    // ✅ CORRECTION : On appelle la bonne fonction globale
+                    setFoodFieldsReadOnly(true);
                 }
             } else {
                 feedback.className = "alert alert-danger mt-2 mb-0 py-2 d-block";
                 feedback.innerHTML = "<i class='bi bi-exclamation-circle-fill me-2'></i> Produit inconnu. Saisie 100% manuelle.";
                 document.getElementById('foodCategoryId').value = "8"; // Catégorie Autres par défaut en cas d'inconnu
+                setFoodFieldsReadOnly(false);
             }
         })
         .catch(error => {
@@ -777,9 +801,33 @@ function clearSearch() {
     input.focus();
 }
 
+// Fonction pour verrouiller ou déverrouiller TOUS les champs officiels d'un produit
+function setFoodFieldsReadOnly(isReadOnly) {
+    const fields = [
+        'foodName', 'foodCategoryId', 'foodCalories', 
+        'foodCarbs', 'foodSugars', 'foodFat', 'foodSaturatedFat', 
+        'foodProtein', 'foodFibers', 'foodSalt', 'foodImage', 'foodUrl'
+    ];
+    
+    fields.forEach(fieldId => {
+        const input = document.getElementById(fieldId);
+        if (input) {
+            // Le select HTML ne supporte pas readOnly, on utilise disabled
+            if (input.tagName === 'SELECT') {
+                input.disabled = isReadOnly;
+            } else {
+                input.readOnly = isReadOnly;
+            }
 
-
-
+            // Effet visuel grisâtre pour montrer que c'est verrouillé
+            if (isReadOnly) {
+                input.classList.add('bg-light');
+            } else {
+                input.classList.remove('bg-light');
+            }
+        }
+    });
+}
 
 </script>
 
