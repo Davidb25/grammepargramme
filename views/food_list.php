@@ -49,7 +49,7 @@
                         <th style="width: 60px;">Visuel</th>
                         <th>Nom de l'aliment</th>
                         <th>Catégorie</th>
-                        <th>Calories (100g)</th>
+                        <th>Portion (100g/ml)</th>
                         <th>Protéines</th>
                         <th>Glucides <small>(sucres)</small></th>
                         <th>Lipides <small>(saturés)</small></th>
@@ -61,12 +61,11 @@
                 <tbody>
                     <?php if (empty($foods)): ?>
                         <tr>
-                            <td colspan="9" class="text-center py-4 text-muted">Aucun aliment dans le catalogue.</td>
+                            <td colspan="10" class="text-center py-4 text-muted">Aucun aliment dans le catalogue.</td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($foods as $food): ?>
                             <tr>
-
                                 <td class="align-middle text-center" style="width: 60px;">
                                     <?php if (!empty($food['image_path'])): ?>
                                         <img src="<?php echo htmlspecialchars($food['image_path']); ?>" 
@@ -102,27 +101,31 @@
                                     </span>
                                 </td>
 
-                                <td><span class="badge bg-primary"><?php echo $food['kcal_per_100g']; ?> kcal</span></td>
+                                <td>
+                                    <span class="badge bg-primary">
+                                        <?php echo $food['kcal_per_100g']; ?> kcal 
+                                        <small>/ 100<?php echo htmlspecialchars($food['food_unit'] ?? 'g'); ?></small>
+                                    </span>
+                                </td>
                                 
-                                <td><?php echo $food['proteins_per_100g']; ?> g</td>
+                                <td><?php echo $food['proteins_per_100g']; ?> <?php echo htmlspecialchars($food['food_unit'] ?? 'g'); ?></td>
                                 
                                 <td>
-                                    <strong><?php echo $food['carbohydrates_per_100g']; ?> g</strong>
+                                    <strong><?php echo $food['carbohydrates_per_100g']; ?> <?php echo htmlspecialchars($food['food_unit'] ?? 'g'); ?></strong>
                                     <br><small class="text-muted">dont : <?php echo $food['sugar_per_100g']; ?> g</small>
                                 </td>
                                 
                                 <td>
-                                    <strong><?php echo $food['fat_per_100g']; ?> g</strong>
+                                    <strong><?php echo $food['fat_per_100g']; ?> <?php echo htmlspecialchars($food['food_unit'] ?? 'g'); ?></strong>
                                     <br><small class="text-muted">dont : <?php echo $food['saturated_fat_per_100g']; ?> g</small>
                                 </td>
                                 
-                                <td><?php echo $food['fibers_per_100g']; ?> g</td>
+                                <td><?php echo $food['fibers_per_100g']; ?> <?php echo htmlspecialchars($food['food_unit'] ?? 'g'); ?></td>
                                 
-                                <td><?php echo $food['salt_per_100g']; ?> g</td>
+                                <td><?php echo $food['salt_per_100g']; ?> <?php echo htmlspecialchars($food['food_unit'] ?? 'g'); ?></td>
                                 
                                 <td class="align-middle text-end" style="width: 140px;">
                                     <div class="d-flex justify-content-end gap-1">
-                                        
                                         <?php if (!empty($food['off_url'])): ?>
                                             <a href="<?php echo htmlspecialchars($food['off_url']); ?>" target="_blank" class="btn btn-sm btn-outline-info" title="Voir sur Open Food Facts">
                                                 <i class="bi bi-globe"></i>
@@ -151,14 +154,14 @@
                                                 data-barcode="<?php echo htmlspecialchars($food['barcode'] ?? ''); ?>"
                                                 data-image="<?php echo htmlspecialchars($food['image_path'] ?? ''); ?>"
                                                 data-url="<?php echo htmlspecialchars($food['off_url'] ?? ''); ?>"
-                                                data-category="<?php echo $food['category_id'] ?? ''; ?>">
+                                                data-category="<?php echo $food['category_id'] ?? ''; ?>"
+                                                data-unit="<?php echo htmlspecialchars($food['food_unit'] ?? 'g'); ?>">
                                             <i class="bi bi-pencil"></i>
                                         </button>
 
                                         <button class="btn btn-sm btn-outline-danger" onclick="confirmDelete(<?= $food['id'] ?>, '<?= htmlspecialchars($food['name'], ENT_QUOTES) ?>')" title="Supprimer l'aliment">
                                             <i class="bi bi-trash"></i>
                                         </button>
-
                                     </div>
                                 </td>
                             </tr>
@@ -178,7 +181,8 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             
-            <form id="foodForm" action="index.php?action=foods" method="POST">
+            <!-- Correction ici : on réactive le SELECT disabled juste avant de soumettre le formulaire -->
+            <form id="foodForm" action="index.php?action=foods" method="POST" onsubmit="document.getElementById('foodCategoryId').disabled = false;">
                 <div class="modal-body">
                     <input type="hidden" name="id" id="foodId">
                     
@@ -215,9 +219,18 @@
                         <div class="form-text text-muted small">Ce nom n'est visible que par toi pour tes recherches rapides.</div>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Nom de l'aliment *</label>
-                        <input type="text" name="name" id="foodName" class="form-control" required placeholder="ex: Skyr, Miel...">
+                    <div class="row">
+                        <div class="col-8 mb-3">
+                            <label class="form-label fw-bold">Nom de l'aliment *</label>
+                            <input type="text" name="name" id="foodName" class="form-control" required placeholder="ex: Skyr, Miel...">
+                        </div>
+                        <div class="col-4 mb-3">
+                            <label class="form-label fw-bold">Unité de base *</label>
+                            <select name="food_unit" id="foodUnit" class="form-select fw-bold border-dark" onchange="updateDynamicLabels(this.value)">
+                                <option value="g" selected>Grammes (g)</option>
+                                <option value="ml">Millilitres (ml)</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div class="mb-3">
@@ -235,13 +248,13 @@
                     </div>
                     
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Calories (kcal) *</label>
+                        <label class="form-label fw-bold">Calories (<span class="dyn-unit">kcal</span>) (pour 100<span class="lbl-unit">g</span>) *</label>
                         <input type="number" step="any" name="calories" id="foodCalories" class="form-control" required>
                     </div>
 
                     <div class="row">
                         <div class="col-6 mb-3">
-                            <label class="form-label fw-semibold">Glucides (g) *</label>
+                            <label class="form-label fw-semibold">Glucides (pour 100<span class="lbl-unit">g</span>) *</label>
                             <input type="number" step="0.01" name="carbs" id="foodCarbs" class="form-control" required>
                         </div>
                         <div class="col-6 mb-3">
@@ -252,7 +265,7 @@
 
                     <div class="row">
                         <div class="col-6 mb-3">
-                            <label class="form-label fw-semibold">Lipides (g) *</label>
+                            <label class="form-label fw-semibold">Lipides (pour 100<span class="lbl-unit">g</span>) *</label>
                             <input type="number" step="0.01" name="fat" id="foodFat" class="form-control" required>
                         </div>
                         <div class="col-6 mb-3">
@@ -263,7 +276,7 @@
 
                     <div class="row">
                         <div class="col-6 mb-3">
-                            <label class="form-label fw-semibold">Protéines (g) *</label>
+                            <label class="form-label fw-semibold">Protéines (pour 100<span class="lbl-unit">g</span>) *</label>
                             <input type="number" step="0.01" name="protein" id="foodProtein" class="form-control" required>
                         </div>
                         <div class="col-6 mb-3">
@@ -306,17 +319,14 @@
 <div class="modal fade" id="imagePreviewModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-sm">
         <div class="modal-content shadow-lg bg-white p-0 position-relative rounded"  style="border: solid 4px rgb(255, 255, 255);">
-            
             <button type="button" 
                     class="btn-close position-absolute top-0 end-0 m-3 z-3 bg-white p-2 rounded-circle border shadow-sm" 
                     data-bs-dismiss="modal" 
                     aria-label="Close"
                     style="opacity: 0.8;"></button>
-            
             <div class="modal-body p-0 text-center overflow-hidden rounded">
                 <img src="" id="modalLargeImage" class="img-fluid d-block w-100" alt="Plein écran" style="max-height: 75vh; object-fit: contain;">
             </div>
-
         </div>
     </div>
 </div>
@@ -346,36 +356,37 @@
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <script>
-// --- LOGIQUE DU FORMULAIRE (AJOUT / MODIFICATION) ---
+function updateDynamicLabels(unit) {
+    document.querySelectorAll('.lbl-unit').forEach(span => {
+        span.innerText = unit;
+    });
+}
+
 function setupAddMode() {
     document.getElementById('foodForm').reset();
     document.getElementById('foodId').value = '';
-    document.getElementById('modalTitle').innerText = "Nouvel Aliment (Valeurs pour 100g)";
+    document.getElementById('modalTitle').innerText = "Nouvel Aliment (Valeurs pour 100g/ml)";
     document.getElementById('btnSubmit').innerText = "Enregistrer au catalogue";
     document.getElementById('btnSubmit').className = "btn btn-success";
     document.getElementById('btnReset').style.display = "inline-block";
     document.getElementById('btnDeleteFromModal').style.display = "none";
     document.getElementById('foodCustomName').value = '';
     
-    // On cache l'aperçu de l'image en mode ajout pur
+    document.getElementById('foodUnit').value = 'g';
+    updateDynamicLabels('g');
+
     document.getElementById('foodImagePreviewContainer').classList.add('d-none');
     document.getElementById('foodImagePreview').src = '';
     clearApiFeedback();
+    setFoodFieldsReadOnly(false);
 
-    // --- DETECTION MOBILE POUR OUVERTURE AUTO DE LA CAMERA ---
-    // On vérifie si l'appareil est un smartphone/tablette (iOS ou Android)
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    
     if (isMobile) {
-        // Si c'est un mobile, on attend un tout petit instant (150ms) que la modale 
-        // finisse de s'ouvrir graphiquement, puis on lance l'appareil photo
         setTimeout(function() {
             startCameraScanner();
         }, 150);
     }
-
     document.getElementById('foodBarcode').removeAttribute('inputmode');
-
 }
 
 function setupEditMode(button) {
@@ -399,12 +410,15 @@ function setupEditMode(button) {
     document.getElementById('foodBarcode').value = button.getAttribute('data-barcode');
     document.getElementById('foodCustomName').value = button.getAttribute('data-custom-name') || '';
     
+    const unit = button.getAttribute('data-unit') || 'g';
+    document.getElementById('foodUnit').value = unit;
+    updateDynamicLabels(unit);
+    
     const imgPath = button.getAttribute('data-image');
     document.getElementById('foodImage').value = imgPath || '';
     document.getElementById('foodUrl').value = button.getAttribute('data-url');
     document.getElementById('foodCategoryId').value = button.getAttribute('data-category');
 
-    // Gestion de l'affichage de l'image en édition
     const previewContainer = document.getElementById('foodImagePreviewContainer');
     const previewImg = document.getElementById('foodImagePreview');
     if (imgPath && imgPath.trim() !== '') {
@@ -417,8 +431,6 @@ function setupEditMode(button) {
 
     document.getElementById('foodBarcode').removeAttribute('inputmode');
     
-// --- SÉCURITÉ DE MODIFICATION ---
-    // Si l'aliment qu'on charge contient un lien Open Food Facts, on verrouille les champs officiels
     const currentUrl = button.getAttribute('data-url') || '';
     if (currentUrl.includes('openfoodfacts.org')) {
         setFoodFieldsReadOnly(true);
@@ -427,7 +439,6 @@ function setupEditMode(button) {
     }
 }
 
-// --- LOGIQUE D'INTERROGATION OPEN FOOD FACTS ---
 function clearApiFeedback() {
     const loader = document.getElementById('apiLoader');
     const feedback = document.getElementById('apiFeedback');
@@ -440,16 +451,10 @@ function clearApiFeedback() {
 
 function checkBarcodeLength(barcode) {
     const cleanedBarcode = barcode.trim();
-    
-    // Si le code-barres fait la bonne taille (8 ou 13 caractères), on lance la recherche API
     if (cleanedBarcode.length === 13 || cleanedBarcode.length === 8) {
         fetchOFFData(cleanedBarcode);
-    } 
-    // Sinon, dès que l'utilisateur modifie le code (ex: il supprime un chiffre), on nettoie tout
-    else {
-        clearApiFeedback(); // Efface les messages de succès / erreur
-        
-        // On réinitialise les champs liés aux macros et au produit, sans toucher au code-barres lui-même
+    } else {
+        clearApiFeedback();
         document.getElementById('foodName').value = '';
         document.getElementById('foodCalories').value = '';
         document.getElementById('foodCarbs').value = '';
@@ -461,9 +466,10 @@ function checkBarcodeLength(barcode) {
         document.getElementById('foodSalt').value = '';
         document.getElementById('foodImage').value = '';
         document.getElementById('foodUrl').value = '';
-        document.getElementById('foodCategoryId').value = ''; // Remet la catégorie par défaut
+        document.getElementById('foodCategoryId').value = '';
+        document.getElementById('foodUnit').value = 'g';
+        updateDynamicLabels('g');
         
-        // NOUVEAU : On vide et on masque proprement le visuel de l'image
         const previewContainer = document.getElementById('foodImagePreviewContainer');
         const previewImg = document.getElementById('foodImagePreview');
         if (previewContainer) previewContainer.classList.add('d-none');
@@ -495,16 +501,21 @@ function fetchOFFData(barcode) {
                 let rawName = product.product_name_fr || product.product_name || '';
                 const brand = product.brands || '';
 
-                // On assemble la marque et le nom si la marque n'est pas déjà dans le nom
                 let finalName = rawName;
                 if (brand && !rawName.toLowerCase().includes(brand.toLowerCase())) {
                     finalName = brand + " - " + rawName;
                 }
 
-                // 3. On injecte le résultat dans le champ du formulaire
                 document.getElementById('foodName').value = finalName;
 
-                const kcal = nutrients['energy-kcal_100g'] || nutrients['energy-kcal_value'] || '';
+                let detectedUnit = 'g';
+                if (product.volume_unit || (product.quantity_unit && ['ml', 'cl', 'l'].includes(product.quantity_unit.toLowerCase()))) {
+                    detectedUnit = 'ml';
+                }
+                document.getElementById('foodUnit').value = detectedUnit;
+                updateDynamicLabels(detectedUnit);
+
+                const kcal = nutrients['energy-kcal_100g'] || nutrients['energy-kcal_value'] || nutrients['energy-kcal'] || '';
                 const carbs = nutrients['carbohydrates_100g'];
                 const sugars = nutrients['sugars_100g'];
                 const fat = nutrients['fat_100g'];
@@ -512,9 +523,8 @@ function fetchOFFData(barcode) {
                 const protein = nutrients['proteins_100g'];
                 const fibers = nutrients['fiber_100g'];
                 const salt = nutrients['salt_100g'];
-;
-                document.getElementById('foodCalories').value = kcal ? Math.round(kcal) : '';
 
+                document.getElementById('foodCalories').value = kcal ? Math.round(kcal) : '';
                 const formatMacro = (val) => (val !== undefined && val !== '') ? parseFloat(val).toFixed(2) : '';
 
                 document.getElementById('foodCarbs').value = formatMacro(carbs);
@@ -539,42 +549,32 @@ function fetchOFFData(barcode) {
                     previewImg.src = '';
                 }
 
-                // =============================================================
-                // 🧠 NOUVEAU : SYSTÈME DE CATÉGORISATION AUTOMATIQUE SMART
-                // =============================================================
-                let detectedCategoryId = ""; // Par défaut, on ne touche à rien
-                
-                // Récupération de la chaîne de toutes les catégories du produit
+                let detectedCategoryId = "";
                 const offCategories = (product.categories || "").toLowerCase();
                 
-                // Dictionnaire de détection par mots-clés prioritaires
                 if (offCategories.includes("boisson") || offCategories.includes("beverage") || offCategories.includes("jus de") || offCategories.includes("soda") || offCategories.includes("café") || offCategories.includes("thé")) {
-                    detectedCategoryId = "7"; // Boissons
+                    detectedCategoryId = "7"; 
                 } else if (offCategories.includes("lait") || offCategories.includes("yaourt") || offCategories.includes("fromage") || offCategories.includes("skyr") || offCategories.includes("dairy") || offCategories.includes("crème fraîche")) {
-                    detectedCategoryId = "2"; // Produits Laitiers
+                    detectedCategoryId = "2"; 
                 } else if (offCategories.includes("viande") || offCategories.includes("poulet") || offCategories.includes("bœuf") || offCategories.includes("poisson") || offCategories.includes("thon") || offCategories.includes("œuf") || offCategories.includes("meat") || offCategories.includes("seafood")) {
-                    detectedCategoryId = "3"; // Viandes / Poissons / Œufs
+                    detectedCategoryId = "3"; 
                 } else if (offCategories.includes("huile") || offCategories.includes("beurre") || offCategories.includes("margarine") || offCategories.includes("amande") || offCategories.includes("noix") || offCategories.includes("avocat") || offCategories.includes("fats")) {
-                    detectedCategoryId = "4"; // Matières Grasses
+                    detectedCategoryId = "4"; 
                 } else if (offCategories.includes("fruit") || offCategories.includes("légume") || offCategories.includes("tomate") || offCategories.includes("salade") || offCategories.includes("plant-based foods")) {
-                    // Attention à ne pas confondre "jus de fruit" (déjà traité dans Boissons en premier)
-                    detectedCategoryId = "5"; // Fruits / Légumes
+                    detectedCategoryId = "5"; 
                 } else if (offCategories.includes("chocolat") || offCategories.includes("biscuit") || offCategories.includes("bonbon") || offCategories.includes("miel") || offCategories.includes("confiture") || offCategories.includes("sucre") || offCategories.includes("snack")) {
-                    detectedCategoryId = "6"; // Produits Sucrés
-                } else if (offCategories.includes("riz") || offCategories.includes("pâte") || offCategories.includes("pain") || offCategories.includes("avoine") || offCategories.includes("céréale") || offCategories.includes("lentille") || offCategories.includes("féculent") || offCategories.includes("cereals") || offCategories.includes("blé") || offCategories.includes("ebly") || offCategories.includes("ébly")) {
-                    detectedCategoryId = "1"; // Féculents / Céréales
+                    detectedCategoryId = "6"; 
+                } else if (offCategories.includes("riz") || offCategories.includes("pâte") || offCategories.includes("pain") || offCategories.includes("avoine") || offCategories.includes("céréale") || offCategories.includes("lentille") || offCategories.includes("féculent") || offCategories.includes("cereals") || offCategories.includes("blé")) {
+                    detectedCategoryId = "1"; 
                 } else if (offCategories.includes("plat préparé") || offCategories.includes("pizza") || offCategories.includes("sandwich") || offCategories.includes("meals")) {
-                    detectedCategoryId = "8"; // Plats préparés / Autres
+                    detectedCategoryId = "8"; 
                 }
 
-                // Si le traducteur a trouvé une catégorie, on la sélectionne automatiquement dans le <select>
                 if (detectedCategoryId !== "") {
                     document.getElementById('foodCategoryId').value = detectedCategoryId;
                 } else {
-                    // Si OFF ne renvoie rien ou si aucun mot-clé ne correspond, on met "Plats préparés / Autres" par défaut
                     document.getElementById('foodCategoryId').value = "8";
                 }
-                // =============================================================
 
                 if (!kcal || carbs === undefined || fat === undefined || protein === undefined) {
                     feedback.className = "alert alert-warning mt-2 mb-0 py-2 d-block";
@@ -582,8 +582,7 @@ function fetchOFFData(barcode) {
                         <div class="d-flex align-items-center">
                             <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
                             <div>
-                                <strong>Produit incomplet !</strong><br>
-                                Certaines macros manquent sur Open Food Facts. Remplis les manuellement.
+                                <strong>Produit incomplet !</strong><br> Certaines macros manquent. Remplis les manuellement.
                             </div>
                         </div>
                     `;
@@ -591,14 +590,12 @@ function fetchOFFData(barcode) {
                 } else {
                     feedback.className = "alert alert-success mt-2 mb-0 py-2 d-block";
                     feedback.innerHTML = "<i class='bi bi-check-circle-fill me-2'></i> Produit importé avec succès !";
-                    
-                    // ✅ CORRECTION : On appelle la bonne fonction globale
                     setFoodFieldsReadOnly(true);
                 }
             } else {
                 feedback.className = "alert alert-danger mt-2 mb-0 py-2 d-block";
                 feedback.innerHTML = "<i class='bi bi-exclamation-circle-fill me-2'></i> Produit inconnu. Saisie 100% manuelle.";
-                document.getElementById('foodCategoryId').value = "8"; // Catégorie Autres par défaut en cas d'inconnu
+                document.getElementById('foodCategoryId').value = "8"; 
                 setFoodFieldsReadOnly(false);
             }
         })
@@ -610,7 +607,7 @@ function fetchOFFData(barcode) {
             feedback.innerHTML = "<i class='bi bi-wifi-off me-2'></i> Erreur réseau.";
         });
 }
-// --- LOGIQUE DU SCANNER PHOTO ---
+
 let html5QrCode = null;
 
 function startCameraScanner() {
@@ -653,7 +650,6 @@ function stopCameraScanner() {
     }
 }
 
-// --- SUPPRESSION ALIMENT ---
 let deleteModalBootstrap = null;
 
 function confirmDelete(id, name) {
@@ -677,34 +673,26 @@ function deleteCurrentFoodFromModal() {
     confirmDelete(id, name);
 }
 
-// --- AUTO-FOCUS & REFORMATAGE INTELLIGENT DES SAISIES NUMÉRIQUES ---
 document.addEventListener("DOMContentLoaded", function () {
-    
-    // Auto-focus intelligent sur le champ Code-barres dès l'ouverture de la modale
     const modalEl = document.getElementById('addFoodModal');
     modalEl.addEventListener('shown.bs.modal', function () {
         const barcodeInput = document.getElementById('foodBarcode');
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         
         if (isMobile) {
-            // Sur mobile, on bloque le clavier virtuel AVANT de faire le focus
             barcodeInput.setAttribute('inputmode', 'none');
         } else {
-            // Sur PC, on s'assure que l'inputmode reste normal
             barcodeInput.removeAttribute('inputmode');
         }
-        
         barcodeInput.focus();
     });
 
-    // Si l'utilisateur clique manuellement dans le champ code-barres, on lui réactive le clavier
     document.getElementById('foodBarcode').addEventListener('click', function() {
         this.removeAttribute('inputmode');
         this.focus();
     });
 
-    // Gestion propre des décimales (Solution ultime type=text temporaire)
-const inputs = document.querySelectorAll('#foodForm input[type="number"]');
+    const inputs = document.querySelectorAll('#foodForm input[type="number"]');
     inputs.forEach(input => {
         input.addEventListener("focus", function() {
             this.type = "text";
@@ -749,7 +737,6 @@ const inputs = document.querySelectorAll('#foodForm input[type="number"]');
         });
     });
 
-    // Écouteur manuel sur le champ URL de la photo pour mettre à jour l'aperçu si collé à la main
     const imageInput = document.getElementById('foodImage');
     if (imageInput) {
         imageInput.addEventListener('change', function() {
@@ -766,24 +753,18 @@ const inputs = document.querySelectorAll('#foodForm input[type="number"]');
     }
 });
 
-// Fonction pour filtrer le tableau en temps réel
 function filterFoodTable() {
     const input = document.getElementById('globalSearchInput');
     const filter = input.value.toLowerCase().trim();
     const table = document.querySelector('.table tbody');
     const rows = table.getElementsByTagName('tr');
 
-    // Si le tableau est vide (ex: aucun aliment), on ne fait rien
     if (rows.length === 1 && rows[0].cells.length === 1) return;
 
     for (let i = 0; i < rows.length; i++) {
-        // On récupère le texte de la cellule du Nom (colonne index 1)
         const nameCell = rows[i].getElementsByTagName('td')[1];
-        
         if (nameCell) {
             const textValue = nameCell.textContent || nameCell.innerText;
-            
-            // Si le texte de la cellule contient la recherche, on affiche la ligne, sinon on la cache
             if (textValue.toLowerCase().indexOf(filter) > -1) {
                 rows[i].style.display = "";
             } else {
@@ -793,7 +774,6 @@ function filterFoodTable() {
     }
 }
 
-// Fonction pour vider la recherche proprement
 function clearSearch() {
     const input = document.getElementById('globalSearchInput');
     input.value = '';
@@ -801,10 +781,10 @@ function clearSearch() {
     input.focus();
 }
 
-// Fonction pour verrouiller ou déverrouiller TOUS les champs officiels d'un produit
+// --- FONCTION DE VERROUILLAGE CENTRALISÉE CORRIGÉE ---
 function setFoodFieldsReadOnly(isReadOnly) {
     const fields = [
-        'foodName', 'foodCategoryId', 'foodCalories', 
+        'foodName', 'foodCategoryId', 'foodUnit', 'foodCalories', 
         'foodCarbs', 'foodSugars', 'foodFat', 'foodSaturatedFat', 
         'foodProtein', 'foodFibers', 'foodSalt', 'foodImage', 'foodUrl'
     ];
@@ -812,14 +792,12 @@ function setFoodFieldsReadOnly(isReadOnly) {
     fields.forEach(fieldId => {
         const input = document.getElementById(fieldId);
         if (input) {
-            // Le select HTML ne supporte pas readOnly, on utilise disabled
             if (input.tagName === 'SELECT') {
                 input.disabled = isReadOnly;
             } else {
                 input.readOnly = isReadOnly;
             }
 
-            // Effet visuel grisâtre pour montrer que c'est verrouillé
             if (isReadOnly) {
                 input.classList.add('bg-light');
             } else {
@@ -827,8 +805,13 @@ function setFoodFieldsReadOnly(isReadOnly) {
             }
         }
     });
-}
 
+    // 🔒 Correction : Le bouton Enregistrer doit TOUJOURS rester disponible
+    const btnSubmit = document.getElementById('btnSubmit');
+    if (btnSubmit) {
+        btnSubmit.classList.remove('d-none');
+    }
+}
 </script>
 
 <style>
