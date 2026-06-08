@@ -163,7 +163,9 @@ $isAdmin = isset($_SESSION['user_role']) && strtoupper($_SESSION['user_role']) =
                                         </button>
 
                                         <?php if ($isAdmin): ?>
-                                            <button class="btn btn-sm btn-outline-danger" onclick="confirmDelete(<?= $food['id'] ?>, '<?= htmlspecialchars($food['name'], ENT_QUOTES) ?>')" title="Supprimer l'aliment">
+                                            <button class="btn btn-sm btn-outline-danger" 
+                                                    onclick="confirmDelete(<?= $food['id'] ?>, '<?= addslashes(htmlspecialchars($food['name'], ENT_QUOTES)) ?>')" 
+                                                    title="Supprimer l'aliment">
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                         <?php endif; ?>
@@ -669,7 +671,7 @@ function confirmDelete(id, name) {
     if(!userIsAdmin) return; // Sécurité JS supplémentaire
     document.getElementById('deleteFoodId').value = id;
     document.getElementById('deleteFoodName').innerText = name;
-    
+
     if(!deleteModalBootstrap) {
         deleteModalBootstrap = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
     }
