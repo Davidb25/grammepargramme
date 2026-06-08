@@ -1,6 +1,9 @@
 <?php
 // controllers/AuthController.php
 
+
+
+
 require_once 'config/database.php';
 require_once 'models/UserModel.php';
 
@@ -60,7 +63,8 @@ class AuthController {
                     // Connexion réussie : On stocke les infos dans la SESSION PHP
                     $_SESSION['user_id'] = $user['id'];
                     $_SESSION['user_email'] = $email;
-                    
+                    $_SESSION['user_role'] = $user['role']; // Contient 'USER' ou 'ADMIN'
+
                     // On redirige vers le tableau de bord
                     header('Location: index.php?action=dashboard');
                     exit();

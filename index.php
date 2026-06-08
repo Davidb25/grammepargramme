@@ -1,10 +1,15 @@
 <?php
 // index.php
 
-// 1. Activation de la session (indispensable pour connecter un utilisateur)
+// 1. Activation de la session (Indispensable en ligne 1 pour que le rôle ADMIN fonctionne partout !)
 session_start();
 
-// 2. Inclusion du contrôleur d'authentification
+// ⚠️ ATTENTION : À COMMENTER OBLIGATOIREMENT LES 3 LIGNES DI-DESSOUS AVANT LA MISE EN LIGNE (PRODUCTION) !
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+// 2. Inclusion des contrôleurs et configurations nécessaires
 require_once 'controllers/AuthController.php';
 require_once 'controllers/FoodController.php';
 
@@ -36,19 +41,19 @@ switch ($action) {
         $authController->logoutAction();
         break;
 
-    case 'foods': // <-- NOUVELLE ROUTE POUR LE CATALOGUE
+    case 'foods': // <-- ROUTE POUR LE CATALOGUE D'ALIMENTS
         $foodController->indexAction();
         break;
 
     case 'dashboard':
-        // Pour l'instant, on inclut le fichier dashboard.php temporaire
+        // Inclusion du tableau de bord temporaire
         require_once 'views/layout/header.php';
         require_once 'views/dashboard.php';
         require_once 'views/layout/footer.php';
         break;
 
     default:
-        // Si l'action est inconnue, retour au login ou dashboard selon statut
-        header('Location: index.php');
+        // Page 404 ou redirection si l'action n'existe pas
+        header('Location: index.php?action=dashboard');
         exit();
 }

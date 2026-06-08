@@ -30,6 +30,13 @@ class FoodController {
 
         // Si on reçoit une demande de suppression classique...
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
+
+            if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'ADMIN') {
+                // Stop ! Tu n'es pas admin, tu ne passes pas.
+                header("Location: index.php?action=foods&error=Action non autorisée.");
+                exit();
+            }
+
             $delete_id = intval($_POST['delete_id']);
             
             try {

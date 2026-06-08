@@ -1,5 +1,8 @@
 <?php
 // views/food_list.php
+
+$isAdmin = isset($_SESSION['user_role']) && strtoupper($_SESSION['user_role']) === 'ADMIN';
+
 ?>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -159,9 +162,11 @@
                                             <i class="bi bi-pencil"></i>
                                         </button>
 
-                                        <button class="btn btn-sm btn-outline-danger" onclick="confirmDelete(<?= $food['id'] ?>, '<?= htmlspecialchars($food['name'], ENT_QUOTES) ?>')" title="Supprimer l'aliment">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
+                                        <?php if ($isAdmin): ?>
+                                            <button class="btn btn-sm btn-outline-danger" onclick="confirmDelete(<?= $food['id'] ?>, '<?= htmlspecialchars($food['name'], ENT_QUOTES) ?>')" title="Supprimer l'aliment">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        <?php endif; ?>
                                     </div>
                                 </td>
                             </tr>
@@ -181,7 +186,6 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             
-            <!-- Correction ici : on réactive le SELECT disabled juste avant de soumettre le formulaire -->
             <form id="foodForm" action="index.php?action=foods" method="POST" onsubmit="document.getElementById('foodCategoryId').disabled = false;">
                 <div class="modal-body">
                     <input type="hidden" name="id" id="foodId">
@@ -302,7 +306,9 @@
                 </div>
 
                 <div class="modal-footer d-flex justify-content-between">
-                    <button type="button" class="btn btn-outline-danger" id="btnDeleteFromModal" onclick="deleteCurrentFoodFromModal()">
+                    <button type="button" class="btn btn-outline-danger" id="btnDeleteFromModal" 
+                            style="display: <?php echo $isAdmin ? 'inline-block' : 'none'; ?>;" 
+                            onclick="deleteCurrentFoodFromModal()">
                         <i class="bi bi-trash"></i> Supprimer
                     </button>
                     <div>
@@ -331,6 +337,7 @@
     </div>
 </div>
 
+<?php if ($isAdmin): ?>
 <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -352,10 +359,14 @@
         </div>
     </div>
 </div>
+<?php endif; ?>
 
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <script>
+// Transmettre la variable PHP du rôle au JavaScript de manière sécurisée
+const userIsAdmin = <?php echo $isAdmin ? 'true' : 'false'; ?>;
+
 function updateDynamicLabels(unit) {
     document.querySelectorAll('.lbl-unit').forEach(span => {
         span.innerText = unit;
@@ -394,7 +405,9 @@ function setupEditMode(button) {
     document.getElementById('btnSubmit').innerText = "Sauvegarder les modifications";
     document.getElementById('btnSubmit').className = "btn btn-primary";
     document.getElementById('btnReset').style.display = "none";
-    document.getElementById('btnDeleteFromModal').style.display = "inline-block";
+    
+    // Sécurité Rôle : N'affiche le bouton supprimer que si l'utilisateur est Admin
+    document.getElementById('btnDeleteFromModal').style.display = userIsAdmin ? "inline-block" : "none";
     clearApiFeedback();
 
     document.getElementById('foodId').value = button.getAttribute('data-id');
@@ -653,6 +666,7 @@ function stopCameraScanner() {
 let deleteModalBootstrap = null;
 
 function confirmDelete(id, name) {
+    if(!userIsAdmin) return; // Sécurité JS supplémentaire
     document.getElementById('deleteFoodId').value = id;
     document.getElementById('deleteFoodName').innerText = name;
     
@@ -781,7 +795,6 @@ function clearSearch() {
     input.focus();
 }
 
-// --- FONCTION DE VERROUILLAGE CENTRALISÉE CORRIGÉE ---
 function setFoodFieldsReadOnly(isReadOnly) {
     const fields = [
         'foodName', 'foodCategoryId', 'foodUnit', 'foodCalories', 
@@ -806,7 +819,18 @@ function setFoodFieldsReadOnly(isReadOnly) {
         }
     });
 
-    // 🔒 Correction : Le bouton Enregistrer doit TOUJOURS rester disponible
+    // 🔒 1. Le code-barres devient également en lecture seule si le produit vient d'OFF en mode édition
+    const barcodeInput = document.getElementById('foodBarcode');
+    if (barcodeInput) {
+        barcodeInput.readOnly = isReadOnly;
+        if (isReadOnly) {
+            barcodeInput.classList.add('bg-light');
+        } else {
+            barcodeInput.classList.remove('bg-light');
+        }
+    }
+
+    // 🔒 2. Le bouton Enregistrer reste disponible
     const btnSubmit = document.getElementById('btnSubmit');
     if (btnSubmit) {
         btnSubmit.classList.remove('d-none');

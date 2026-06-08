@@ -34,21 +34,21 @@ class UserModel {
         ]);
     }
 
-    // Méthode pour connecter un utilisateur
-    public function login($email, $password) {
-        // On cherche l'utilisateur par son email
-        $query = "SELECT id, password_hash FROM " . $this->table . " WHERE email = :email LIMIT 1";
-        $stmt = $this->db->prepare($query);
-        $stmt->execute(['email' => $email]);
+// Méthode pour connecter un utilisateur
+public function login($email, $password) {
+    
+    $query = "SELECT id, password_hash, role FROM " . $this->table . " WHERE email = :email LIMIT 1";
+    $stmt = $this->db->prepare($query);
+    $stmt->execute(['email' => $email]);
 
-        if ($stmt->rowCount() > 0) {
-            $user = $stmt->fetch();
-            
-            // Vérification ultra-sécurisée du mot de passe haché
-            if (password_verify($password, $user['password_hash'])) {
-                return $user; // On retourne l'utilisateur (on aura besoin de son id)
-            }
+    if ($stmt->rowCount() > 0) {
+        $user = $stmt->fetch();
+        
+        // Vérification ultra-sécurisée du mot de passe haché
+        if (password_verify($password, $user['password_hash'])) {
+            return $user; // Contient désormais l'id, le password_hash ET le role !
         }
-        return false; // Mauvais email ou mot de passe
     }
+    return false; // Mauvais email ou mot de passe
+}
 }
