@@ -9,14 +9,26 @@ class FoodModel {
         $this->db = $dbConnection;
     }
 
-    public function getAll($userId = 1) {
-        // On sélectionne f.*, le nom de la catégorie (c.name),
-        // ET le nom personnalisé (ufc.custom_name) renommé en custom_name
+    /**
+     * Récupère les aliments visibles par l'utilisateur
+     * @param int $userId ID de l'utilisateur connecté
+     * @param bool $onlyCustom Si true, filtre UNIQUEMENT sur les aliments créés par cet utilisateur
+     */
+    public function getAll($userId = 1, $onlyCustom = false) {
+        // Condition de base : soit l'aliment est global (NULL), soit il appartient à l'utilisateur connecté
+        $whereClause = "(f.user_id IS NULL OR f.user_id = :user_id)";
+        
+        // Si le filtre global demande "uniquement mes aliments personnels"
+        if ($onlyCustom) {
+            $whereClause = "f.user_id = :user_id";
+        }
+
         $sql = "SELECT f.*, c.name AS category_name, ufc.custom_name 
                 FROM food_items f
                 LEFT JOIN categories c ON f.category_id = c.id
                 LEFT JOIN user_food_customization ufc ON f.id = ufc.food_item_id AND ufc.user_id = :user_id
-                ORDER BY COALESCE(ufc.custom_name, f.name) ASC"; // Trie par le surnom s'il existe, sinon par le nom d'origine
+                WHERE $whereClause
+                ORDER BY COALESCE(ufc.custom_name, f.name) ASC";
                 
         $stmt = $this->db->prepare($sql);
         $stmt->execute(['user_id' => $userId]);
@@ -32,8 +44,17 @@ class FoodModel {
     }
 
     public function create($category_id, $name, $calories, $protein, $carbs, $sugars, $fat, $saturated_fat, $fibers, $salt, $barcode, $image_path, $off_url, $food_unit = 'g') {
-        $sql = "INSERT INTO food_items (category_id, name, kcal_per_100g, proteins_per_100g, carbohydrates_per_100g, sugar_per_100g, fat_per_100g, saturated_fat_per_100g, fibers_per_100g, salt_per_100g, barcode, image_path, off_url, food_unit) 
-                VALUES (:category_id, :name, :calories, :protein, :carbs, :sugars, :fat, :saturated_fat, :fibers, :salt, :barcode, :image_path, :off_url, :food_unit)";
+        // NOUVELLE LOGIQUE :
+        // Si l'aliment provient d'Open Food Facts (off_url présent), il devient global/public (null).
+        // Sinon (saisie 100% manuelle), on lui affecte l'ID de l'utilisateur connecté pour en faire un aliment "Perso".
+        if (!empty($off_url)) {
+            $userIdToInsert = null;
+        } else {
+            $userIdToInsert = $_SESSION['user_id'] ?? null;
+        }
+
+        $sql = "INSERT INTO food_items (category_id, name, kcal_per_100g, proteins_per_100g, carbohydrates_per_100g, sugar_per_100g, fat_per_100g, saturated_fat_per_100g, fibers_per_100g, salt_per_100g, barcode, image_path, off_url, food_unit, user_id) 
+                VALUES (:category_id, :name, :calories, :protein, :carbs, :sugars, :fat, :saturated_fat, :fibers, :salt, :barcode, :image_path, :off_url, :food_unit, :user_id)";
         
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([
@@ -50,11 +71,14 @@ class FoodModel {
             'barcode' => !empty($barcode) ? $barcode : null,
             'image_path' => !empty($image_path) ? $image_path : null,
             'off_url' => !empty($off_url) ? $off_url : null,
-            'food_unit' => $food_unit
+            'food_unit' => $food_unit,
+            'user_id' => $userIdToInsert
         ]);
     }
 
     public function update($id, $category_id, $name, $calories, $protein, $carbs, $sugars, $fat, $saturated_fat, $fibers, $salt, $barcode, $image_path, $off_url, $food_unit = 'g') {
+        // Pour l'UPDATE, on supprime la modification du 'user_id' afin de ne pas écraser 
+        // le créateur d'origine de l'aliment si un admin passe modifier une valeur.
         $sql = "UPDATE food_items SET 
                     category_id = :category_id,
                     name = :name, 
@@ -69,7 +93,7 @@ class FoodModel {
                     barcode = :barcode, 
                     image_path = :image_path, 
                     off_url = :off_url,
-                    food_unit = :food_unit 
+                    food_unit = :food_unit
                 WHERE id = :id";
                 
         $stmt = $this->db->prepare($sql);

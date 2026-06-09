@@ -2,6 +2,7 @@
 // views/food_list.php
 
 $isAdmin = isset($_SESSION['user_role']) && strtoupper($_SESSION['user_role']) === 'ADMIN';
+$currentUserId = $_SESSION['user_id'] ?? null;
 
 ?>
 
@@ -68,6 +69,10 @@ $isAdmin = isset($_SESSION['user_role']) && strtoupper($_SESSION['user_role']) =
                         </tr>
                     <?php else: ?>
                         <?php foreach ($foods as $food): ?>
+                            <?php 
+                            // 💡 Sécurité : On a le droit de gérer si on est ADMIN OU si on est le créateur de l'aliment
+                            $canManage = $isAdmin || (!empty($food['user_id']) && $food['user_id'] == $currentUserId);
+                            ?>
                             <tr>
                                 <td class="align-middle text-center" style="width: 60px;">
                                     <?php if (!empty($food['image_path'])): ?>
@@ -95,6 +100,12 @@ $isAdmin = isset($_SESSION['user_role']) && strtoupper($_SESSION['user_role']) =
 
                                     <?php if (!empty($food['barcode'])): ?>
                                         <br><small class="text-muted fw-normal"><i class="bi bi-upc-scan me-1"></i><?php echo htmlspecialchars($food['barcode']); ?></small>
+                                    <?php endif; ?>
+
+                                    <?php if (!empty($food['user_id'])): ?>
+                                        <span class="badge bg-info text-dark ms-1" title="Aliment ajouté manuellement">
+                                            <i class="bi bi-person-fill"></i> Perso
+                                        </span>
                                     <?php endif; ?>
                                 </td>
 
@@ -126,7 +137,7 @@ $isAdmin = isset($_SESSION['user_role']) && strtoupper($_SESSION['user_role']) =
                                 <td><?php echo $food['fibers_per_100g']; ?> <?php echo htmlspecialchars($food['food_unit'] ?? 'g'); ?></td>
                                 
                                 <td><?php echo $food['salt_per_100g']; ?> <?php echo htmlspecialchars($food['food_unit'] ?? 'g'); ?></td>
-                                
+
                                 <td class="align-middle text-end" style="width: 140px;">
                                     <div class="d-flex justify-content-end gap-1">
                                         <?php if (!empty($food['off_url'])): ?>
@@ -139,32 +150,34 @@ $isAdmin = isset($_SESSION['user_role']) && strtoupper($_SESSION['user_role']) =
                                             <i class="bi bi-star"></i>
                                         </button>
 
-                                        <button class="btn btn-sm btn-outline-primary" title="Modifier"
-                                                data-bs-toggle="modal" 
-                                                data-bs-target="#addFoodModal"
-                                                onclick="setupEditMode(this)"
-                                                data-custom-name="<?php echo htmlspecialchars($food['custom_name'] ?? ''); ?>"
-                                                data-id="<?php echo $food['id']; ?>"
-                                                data-name="<?php echo htmlspecialchars($food['name']); ?>"
-                                                data-calories="<?php echo $food['kcal_per_100g']; ?>"
-                                                data-protein="<?php echo $food['proteins_per_100g']; ?>"
-                                                data-carbs="<?php echo $food['carbohydrates_per_100g']; ?>"
-                                                data-sugars="<?php echo $food['sugar_per_100g']; ?>"
-                                                data-fat="<?php echo $food['fat_per_100g']; ?>"
-                                                data-saturated_fat="<?php echo $food['saturated_fat_per_100g']; ?>"
-                                                data-fibers="<?php echo $food['fibers_per_100g']; ?>"
-                                                data-salt="<?php echo $food['salt_per_100g']; ?>"
-                                                data-barcode="<?php echo htmlspecialchars($food['barcode'] ?? ''); ?>"
-                                                data-image="<?php echo htmlspecialchars($food['image_path'] ?? ''); ?>"
-                                                data-url="<?php echo htmlspecialchars($food['off_url'] ?? ''); ?>"
-                                                data-category="<?php echo $food['category_id'] ?? ''; ?>"
-                                                data-unit="<?php echo htmlspecialchars($food['food_unit'] ?? 'g'); ?>">
-                                            <i class="bi bi-pencil"></i>
-                                        </button>
+                                        <?php if ($canManage): ?>
+                                            <button class="btn btn-sm btn-outline-primary" title="Modifier"
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#addFoodModal"
+                                                    onclick="setupEditMode(this)"
+                                                    data-custom-name="<?php echo htmlspecialchars($food['custom_name'] ?? ''); ?>"
+                                                    data-id="<?php echo $food['id']; ?>"
+                                                    data-name="<?php echo htmlspecialchars($food['name']); ?>"
+                                                    data-calories="<?php echo $food['kcal_per_100g']; ?>"
+                                                    data-protein="<?php echo $food['proteins_per_100g']; ?>"
+                                                    data-carbs="<?php echo $food['carbohydrates_per_100g']; ?>"
+                                                    data-sugars="<?php echo $food['sugar_per_100g']; ?>"
+                                                    data-fat="<?php echo $food['fat_per_100g']; ?>"
+                                                    data-saturated_fat="<?php echo $food['saturated_fat_per_100g']; ?>"
+                                                    data-fibers="<?php echo $food['fibers_per_100g']; ?>"
+                                                    data-salt="<?php echo $food['salt_per_100g']; ?>"
+                                                    data-barcode="<?php echo htmlspecialchars($food['barcode'] ?? ''); ?>"
+                                                    data-image="<?php echo htmlspecialchars($food['image_path'] ?? ''); ?>"
+                                                    data-url="<?php echo htmlspecialchars($food['off_url'] ?? ''); ?>"
+                                                    data-category="<?php echo $food['category_id'] ?? ''; ?>"
+                                                    data-user-id="<?php echo $food['user_id'] ?? ''; ?>"
+                                                    data-unit="<?php echo htmlspecialchars($food['food_unit'] ?? 'g'); ?>">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
 
-                                        <?php if ($isAdmin): ?>
-                                            <button class="btn btn-sm btn-outline-danger" 
-                                                    onclick="confirmDelete(<?= $food['id'] ?>, '<?= addslashes(htmlspecialchars($food['name'], ENT_QUOTES)) ?>')" 
+                                            <button class="btn btn-sm btn-outline-danger btn-delete-food" 
+                                                    data-id="<?= $food['id'] ?>" 
+                                                    data-name="<?= htmlspecialchars($food['name'], ENT_QUOTES, 'UTF-8') ?>"
                                                     title="Supprimer l'aliment">
                                                 <i class="bi bi-trash"></i>
                                             </button>
@@ -185,7 +198,7 @@ $isAdmin = isset($_SESSION['user_role']) && strtoupper($_SESSION['user_role']) =
         <div class="modal-content">
             <div class="modal-header bg-light">
                 <h5 class="modal-title" id="modalTitle">Saisie Nutritionnelle</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             
             <form id="foodForm" action="index.php?action=foods" method="POST" onsubmit="document.getElementById('foodCategoryId').disabled = false;">
@@ -308,9 +321,7 @@ $isAdmin = isset($_SESSION['user_role']) && strtoupper($_SESSION['user_role']) =
                 </div>
 
                 <div class="modal-footer d-flex justify-content-between">
-                    <button type="button" class="btn btn-outline-danger" id="btnDeleteFromModal" 
-                            style="display: <?php echo $isAdmin ? 'inline-block' : 'none'; ?>;" 
-                            onclick="deleteCurrentFoodFromModal()">
+                    <button type="button" class="btn btn-outline-danger" id="btnDeleteFromModal" style="display: none;" onclick="deleteCurrentFoodFromModal()">
                         <i class="bi bi-trash"></i> Supprimer
                     </button>
                     <div>
@@ -339,7 +350,6 @@ $isAdmin = isset($_SESSION['user_role']) && strtoupper($_SESSION['user_role']) =
     </div>
 </div>
 
-<?php if ($isAdmin): ?>
 <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -361,13 +371,12 @@ $isAdmin = isset($_SESSION['user_role']) && strtoupper($_SESSION['user_role']) =
         </div>
     </div>
 </div>
-<?php endif; ?>
 
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <script>
-// Transmettre la variable PHP du rôle au JavaScript de manière sécurisée
 const userIsAdmin = <?php echo $isAdmin ? 'true' : 'false'; ?>;
+const currentUserId = <?php echo json_encode($currentUserId); ?>;
 
 function updateDynamicLabels(unit) {
     document.querySelectorAll('.lbl-unit').forEach(span => {
@@ -408,8 +417,11 @@ function setupEditMode(button) {
     document.getElementById('btnSubmit').className = "btn btn-primary";
     document.getElementById('btnReset').style.display = "none";
     
-    // Sécurité Rôle : N'affiche le bouton supprimer que si l'utilisateur est Admin
-    document.getElementById('btnDeleteFromModal').style.display = userIsAdmin ? "inline-block" : "none";
+    // Vérification dynamique du droit de suppression depuis le modal d'édition
+    const foodOwnerId = button.getAttribute('data-user-id');
+    const canManageThisFood = userIsAdmin || (foodOwnerId && foodOwnerId == currentUserId);
+    document.getElementById('btnDeleteFromModal').style.display = canManageThisFood ? "inline-block" : "none";
+    
     clearApiFeedback();
 
     document.getElementById('foodId').value = button.getAttribute('data-id');
@@ -668,7 +680,6 @@ function stopCameraScanner() {
 let deleteModalBootstrap = null;
 
 function confirmDelete(id, name) {
-    if(!userIsAdmin) return; // Sécurité JS supplémentaire
     document.getElementById('deleteFoodId').value = id;
     document.getElementById('deleteFoodName').innerText = name;
 
@@ -677,6 +688,15 @@ function confirmDelete(id, name) {
     }
     deleteModalBootstrap.show();
 }
+
+document.addEventListener('click', function(event) {
+    const button = event.target.closest('.btn-delete-food');
+    if (button) {
+        const id = button.getAttribute('data-id');
+        const name = button.getAttribute('data-name');
+        confirmDelete(id, name);
+    }
+});
 
 function deleteCurrentFoodFromModal() {
     const id = document.getElementById('foodId').value; 
@@ -821,7 +841,6 @@ function setFoodFieldsReadOnly(isReadOnly) {
         }
     });
 
-    // 🔒 1. Le code-barres devient également en lecture seule si le produit vient d'OFF en mode édition
     const barcodeInput = document.getElementById('foodBarcode');
     if (barcodeInput) {
         barcodeInput.readOnly = isReadOnly;
@@ -832,7 +851,6 @@ function setFoodFieldsReadOnly(isReadOnly) {
         }
     }
 
-    // 🔒 2. Le bouton Enregistrer reste disponible
     const btnSubmit = document.getElementById('btnSubmit');
     if (btnSubmit) {
         btnSubmit.classList.remove('d-none');
