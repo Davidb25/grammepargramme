@@ -136,19 +136,23 @@ echo "</pre>";
             }
         }
 
-        // Récupération de tous les aliments pour le tableau
-        //*********$foods = $this->foodModel->getAll(1);
-
-        // 1. Récupère le filtre "Mes aliments persos" s'il est coché (on le gérera après)
-        $onlyCustom = isset($_GET['filter_custom']) && $_GET['filter_custom'] == '1';
-
-        // 2. On récupère le VRAI ID de l'utilisateur connecté dans la session
+        // 1. On récupère le VRAI ID de l'utilisateur connecté dans la session
         $currentUserId = $_SESSION['user_id'] ?? null;
 
-        // 3. On passe cet ID au modèle pour qu'il n'affiche que SES aliments + les globaux
-        $foods = $this->foodModel->getAll($currentUserId, $onlyCustom);
+        // 2. Récupère le filtre "Mes aliments persos" s'il est activé
+        $onlyCustom = isset($_GET['filter_custom']) && $_GET['filter_custom'] == '1';
 
+        // 3. Récupère le filtre par étiquette de favoris
+        $filterTagId = null;
+        if (isset($_GET['filter_tag'])) {
+            $filterTagId = ($_GET['filter_tag'] === 'all') ? 'all' : (int)$_GET['filter_tag'];
+        }
 
+        // 4. On passe les paramètres au modèle pour obtenir la liste filtrée
+        $foods = $this->foodModel->getAll($currentUserId, $onlyCustom, $filterTagId);
+
+        // 5. On récupère TOUTES les étiquettes de l'utilisateur pour construire le menu de filtrage dans la vue
+        $userTags = $this->foodModel->getUserTags($currentUserId);
 
 
         // RÉCUPÉRATION DES CATÉGORIES POUR LA LISTE DÉROULANTE

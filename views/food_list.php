@@ -28,18 +28,63 @@ $currentUserId = $_SESSION['user_id'] ?? null;
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 <?php endif; ?>
-<div class="mb-3 d-flex gap-2">
-    <!-- Bouton Tout le catalogue : retire le paramètre filter_custom de l'URL -->
+<div class="mb-3 d-flex flex-wrap gap-2">
     <a href="index.php?action=foods" 
-       class="btn btn-sm <?= !isset($_GET['filter_custom']) ? 'btn-dark' : 'btn-outline-dark' ?>">
+       class="btn btn-sm <?php echo (!isset($_GET['filter_custom']) && !isset($_GET['filter_tag'])) ? 'btn-dark' : 'btn-outline-dark'; ?>">
         <i class="bi bi-grid-fill me-1"></i> Tout le catalogue
     </a>
     
-    <!-- Bouton Mes aliments Perso : active filter_custom=1 -->
     <a href="index.php?action=foods&filter_custom=1" 
-       class="btn btn-sm <?= (isset($_GET['filter_custom']) && $_GET['filter_custom'] == '1') ? 'btn-info text-dark' : 'btn-outline-info' ?>">
+       class="btn btn-sm <?php echo (isset($_GET['filter_custom']) && $_GET['filter_custom'] == '1') ? 'btn-info text-dark' : 'btn-outline-info'; ?>">
         <i class="bi bi-person-fill me-1"></i> Mes aliments Perso
     </a>
+
+    <div class="btn-group">
+        <button type="button" 
+                class="btn btn-sm dropdown-toggle <?php echo isset($_GET['filter_tag']) ? 'btn-warning text-dark' : 'btn-outline-warning text-dark'; ?>" 
+                data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-star-fill text-warning me-1"></i> 
+            <?php 
+                if (isset($_GET['filter_tag'])) {
+                    if ($_GET['filter_tag'] === 'all') {
+                        echo "Tous mes favoris";
+                    } else {
+                        $selectedTagName = "Favoris";
+                        if (!empty($userTags)) {
+                            foreach ($userTags as $tag) {
+                                if ($tag['id'] == $_GET['filter_tag']) {
+                                    $selectedTagName = $tag['tag_name'];
+                                    break;
+                                }
+                            }
+                        }
+                        echo htmlspecialchars($selectedTagName);
+                    }
+                } else {
+                    echo "Filtrer par Favoris";
+                }
+            ?>
+        </button>
+        <ul class="dropdown-menu shadow">
+            <li>
+                <a class="dropdown-item <?php echo (isset($_GET['filter_tag']) && $_GET['filter_tag'] === 'all') ? 'active' : ''; ?>" 
+                   href="index.php?action=foods&filter_tag=all">
+                    <i class="bi bi-stars me-2 text-warning"></i>Tous mes favoris
+                </a>
+            </li>
+            <?php if (!empty($userTags)): ?>
+                <li><hr class="dropdown-divider"></li>
+                <?php foreach ($userTags as $tag): ?>
+                    <li>
+                        <a class="dropdown-item <?php echo (isset($_GET['filter_tag']) && $_GET['filter_tag'] == $tag['id']) ? 'active' : ''; ?>" 
+                           href="index.php?action=foods&filter_tag=<?php echo $tag['id']; ?>">
+                            <i class="bi bi-bookmark-star me-2 text-muted"></i><?php echo htmlspecialchars($tag['tag_name']); ?>
+                        </a>
+                    </li>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </ul>
+    </div>
 </div>
 <div class="card shadow border-0">
     <div class="mb-3">
@@ -218,9 +263,9 @@ $currentUserId = $_SESSION['user_id'] ?? null;
                     <input type="hidden" name="id" id="foodId">
                     
                     <div class="mb-3 p-3 bg-light rounded border border-warning-subtle">
-                        <label class="form-label fw-bold text-dark"><i class="bi bi-upc-scan me-2 text-warning"></i>Scanner ou saisir un Code-barres</label>
+                        <label class="form-label fw-bold text-dark"><i class="bi bi-upc-scan me-2 text-warning"></i>Scanner ou saisir un Code-barres (Recherche Auto)</label>
                         <div class="input-group">
-                            <input type="text" name="barcode" id="foodBarcode" class="form-control" placeholder="Scanner en premier pour pré-remplir" oninput="checkBarcodeLength(this.value)">
+                            <input type="text" name="barcode" id="foodBarcode" class="form-control" placeholder="Scanner ou saisir manuellement..." oninput="checkBarcodeLength(this.value)">
                             <button class="btn btn-primary" type="button" id="btnScanCamera" onclick="startCameraScanner()" title="Scanner avec l'appareil photo">
                                 <i class="bi bi-camera"></i>
                             </button>
@@ -515,6 +560,19 @@ function checkBarcodeLength(barcode) {
         if (previewImg) previewImg.src = '';
     }
 }
+
+// ÉCOUTEUR COMPLÉMENTAIRE POUR LE CAS DE LA SAISIE MANUELLE HORS LONGUEURS FIXES (ex: Copier-coller)
+document.addEventListener("DOMContentLoaded", function () {
+    const barcodeInput = document.getElementById('foodBarcode');
+    if(barcodeInput) {
+        barcodeInput.addEventListener('change', function() {
+            const val = this.value.trim();
+            if(val.length > 3) {
+                fetchOFFData(val);
+            }
+        });
+    }
+});
 
 function fetchOFFData(barcode) {
     if (!barcode) return;

@@ -10,26 +10,55 @@ class FoodModel {
     }
 
     /**
-     * Récupère les aliments visibles par l'utilisateur
+     * Récupère les aliments visibles par l'utilisateur avec leurs étiquettes de favoris
      * @param int $userId ID de l'utilisateur connecté
-     * @param bool $onlyCustom Si true, filtre UNIQUEMENT sur les aliments créés par cet utilisateur
+     * @param bool $onlyCustom Si true, filtre UNIQUEMENT sur les aliments créés en manuel par cet utilisateur
+     * @param int|null $filterTagId ID d'un tag spécifique si on veut filtrer par sous-favori (ex: Collation)
      */
-    public function getAll($userId = 1, $onlyCustom = false) {
-        // Condition de base : soit l'aliment est global (NULL), soit il appartient à l'utilisateur connecté
+    public function getAll($userId = 1, $onlyCustom = false, $filterTagId = null) {
         $whereClause = "(f.user_id IS NULL OR f.user_id = :user_id)";
+        $params = ['user_id' => $userId];
         
-        // Si le filtre global demande "uniquement mes aliments personnels"
+        // Filtre 1 : Uniquement les aliments créés manuellement par l'utilisateur
         if ($onlyCustom) {
             $whereClause = "f.user_id = :user_id";
         }
 
-        $sql = "SELECT f.*, c.name AS category_name, ufc.custom_name 
+        // Filtre 2 : Uniquement les favoris d'une sous-catégorie spécifique (ou tous les favoris)
+        if ($filterTagId !== null) {
+            if ($filterTagId === 'all') {
+                // Tous les aliments qui ont au moins un tag associé pour cet utilisateur
+                $whereClause .= " AND f.id IN (SELECT food_item_id FROM user_food_tags WHERE user_id = :user_id)";
+            } else {
+                // Un tag précis (ex: Petit-déjeuner)
+                $whereClause .= " AND f.id IN (SELECT food_item_id FROM user_food_tags WHERE user_id = :user_id AND tag_id = :tag_id)";
+                $params['tag_id'] = $filterTagId;
+            }
+        }
+
+        // La requête SQL récupère l'aliment, le nom custom, et la liste de ses tags
+        $sql = "SELECT f.*, c.name AS category_name, ufc.custom_name,
+                       GROUP_CONCAT(uft.tag_name SEPARATOR ', ') AS food_tags,
+                       GROUP_CONCAT(uft.id SEPARATOR ', ') AS food_tag_ids
                 FROM food_items f
                 LEFT JOIN categories c ON f.category_id = c.id
                 LEFT JOIN user_food_customization ufc ON f.id = ufc.food_item_id AND ufc.user_id = :user_id
+                LEFT JOIN user_food_tags map ON f.id = map.food_item_id AND map.user_id = :user_id
+                LEFT JOIN user_favorite_tags uft ON map.tag_id = uft.id
                 WHERE $whereClause
+                GROUP BY f.id
                 ORDER BY COALESCE(ufc.custom_name, f.name) ASC";
                 
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Récupère la liste de toutes les étiquettes personnalisées créées par un utilisateur
+     */
+    public function getUserTags($userId) {
+        $sql = "SELECT * FROM user_favorite_tags WHERE user_id = :user_id ORDER BY tag_name ASC";
         $stmt = $this->db->prepare($sql);
         $stmt->execute(['user_id' => $userId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
