@@ -28,6 +28,88 @@ class FoodController {
         // ne se réaffiche pas indéfiniment si on change de page ensuite !
         unset($_SESSION['flash_success'], $_SESSION['flash_error']);
 
+        // =========================================================================
+        // ENREGISTREMENT ET RÉCUPÉRATION DES FAVORIS (INTERCEPTION STANDARD)
+        // =========================================================================
+        if (isset($_GET['subaction'])) {
+            if (ob_get_length()) ob_clean();
+            header('Content-Type: application/json');
+
+            $currentUserId = $_SESSION['user_id'] ?? null;
+            $foodItemId = (int)($_REQUEST['food_id'] ?? $_GET['fav_id'] ?? 0);
+
+            if (!$currentUserId || !$foodItemId) {
+                echo json_encode(['success' => false, 'message' => 'Données manquantes ou session expirée.']);
+                exit;
+            }
+
+            // 1. RÉCUPÉRATION DES STATUTS
+            if ($_GET['subaction'] === 'get_food_fav_status') {
+                try {
+                    $stmt = $this->db->prepare("SELECT tag_id FROM user_food_tags WHERE user_id = ? AND food_item_id = ?");
+                    $stmt->execute([$currentUserId, $foodItemId]);
+                    $tags = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+                    $isFavorite = (count($tags) > 0);
+
+                    // ADAPTÉ : On nettoie le tableau pour le JS en enlevant le tag technique 1 (favori général)
+                    $cleanTags = array_values(array_map('intval', array_filter($tags, function($v) { 
+                        return $v !== null && (int)$v !== 1; 
+                    })));
+
+                    echo json_encode([
+                        'is_favorite' => $isFavorite,
+                        'tags' => $cleanTags
+                    ]);
+                } catch (PDOException $e) {
+                    echo json_encode(['is_favorite' => false, 'tags' => []]);
+                }
+                exit;
+            }
+
+            // 2. SAUVEGARDER LES FAVORIS
+            if ($_GET['subaction'] === 'save_food_favorites') {
+                try {
+                    $isFavorite = (int)($_REQUEST['is_favorite'] ?? 0);
+                    $tagsJson = $_REQUEST['tags'] ?? '[]';
+                    $incomingTags = json_decode($tagsJson, true);
+
+                    $this->db->beginTransaction();
+
+                    // Nettoyage complet pour cet aliment
+                    $stmtDelete = $this->db->prepare("DELETE FROM user_food_tags WHERE user_id = ? AND food_item_id = ?");
+                    $stmtDelete->execute([$currentUserId, $foodItemId]);
+
+                    // Insertion si l'interrupteur est activé
+                    if ($isFavorite === 1) {
+                        $validTags = [];
+                        if (is_array($incomingTags)) {
+                            $validTags = array_filter(array_map('intval', $incomingTags));
+                        }
+
+                        if (!empty($validTags)) {
+                            // CAS A : Des sous-groupes sont cochés (ex: Petit-déjeuner ID 2, etc.)
+                            $stmtInsert = $this->db->prepare("INSERT INTO user_food_tags (user_id, food_item_id, tag_id) VALUES (?, ?, ?)");
+                            foreach ($validTags as $tagId) {
+                                $stmtInsert->execute([$currentUserId, $foodItemId, $tagId]);
+                            }
+                        } else {
+                            // CAS B : Uniquement le curseur général -> ADAPTÉ : On insère le nouvel ID 1 !
+                            $stmtInsert = $this->db->prepare("INSERT INTO user_food_tags (user_id, food_item_id, tag_id) VALUES (?, ?, 1)");
+                            $stmtInsert->execute([$currentUserId, $foodItemId]);
+                        }
+                    }
+
+                    $this->db->commit();
+                    echo json_encode(['success' => true]);
+                } catch (PDOException $e) {
+                    if ($this->db->inTransaction()) $this->db->rollBack();
+                    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+                }
+                exit;
+            }
+        }
+
         // Si on reçoit une demande de suppression classique...
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
 
@@ -106,14 +188,6 @@ class FoodController {
                         $message = "L'aliment a été modifié avec succès !";
                         $foodItemId = $id;
                     } else {
-
-echo "<pre>";
-print_r($_POST); // Pour voir ce que le formulaire envoie vraiment
-echo "</pre>";
-//die(); // Arrête le script pour lire le résultat
-
-
-
                         // Transmission de $food_unit à la méthode create
                         $result = $this->foodModel->create($category_id, $name, $calories, $protein, $carbs, $sugars, $fat, $saturated_fat, $fibers, $salt, $barcode, $image_path, $off_url, $food_unit);
                         $message = "L'aliment \"" . htmlspecialchars($name) . "\" a été ajouté !";
