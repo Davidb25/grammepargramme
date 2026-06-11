@@ -36,6 +36,9 @@
                     <a href="index.php?action=logout" class="btn btn-sm btn-outline-danger">
                         <i class="bi bi-box-arrow-right me-1"></i>Déconnexion
                     </a>
+                    <a href="index.php?action=settings" class=" ms-3 text-secondary text-decoration-none" title="Paramètres">
+                        <i class="bi bi-gear fs-4"></i>
+                    </a>
                 </div>
             </div>
         <?php endif; ?>
