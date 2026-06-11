@@ -75,7 +75,7 @@
                                 </select>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label">Objectif de poids (kg)</label>
+                                <label class="form-label">Objectif de poids (kg) / (facultatif)</label>
                                 <input type="number" step="0.01" name="objectif_poids" class="form-control" placeholder="ex: 68">
                             </div>
                         </div>
