@@ -5,11 +5,11 @@
         <div class="col">
             <div class="card h-100 shadow-sm">
                 <div class="card-body">
-                    <h5 class="card-title text-secondary"><i class="bi bi-person-circle me-2"></i>Profil</h5>
+                    <h5 class="card-title text-primary"><i class="bi bi-person-circle me-2"></i>Profil</h5>
                     <p class="card-text">Modifiez vos informations personnelles et vos préférences d'affichage.</p>
                 </div>
                 <div class="card-footer bg-transparent border-0">
-                    <button class="btn btn-outline-secondary w-100" disabled>Bientôt disponible</button>
+                    <a href="index.php?action=manage_profile" class="btn btn-outline-primary w-100">Configurer</a>
                 </div>
             </div>
         </div>

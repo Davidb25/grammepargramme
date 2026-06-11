@@ -1,6 +1,7 @@
 <?php
 // views/dashboard.php
-// Ce fichier est inclus dans ton indexAction() après le header
+
+/** @var bool $isProfileComplete */
 ?>
 
 <div class="container py-4">
@@ -18,6 +19,12 @@
             <p class="text-muted mb-0 small text-uppercase tracking-wider fw-semibold">Tableau de bord Nutrition</p>
         </div>
     </div>
+
+    <?php if (!$isProfileComplete): ?>
+        <div class="alert alert-warning">
+            Ton profil est incomplet. <a href="index.php?action=manage_profile">Complète-le maintenant</a> pour débloquer tes statistiques.
+        </div>
+    <?php endif; ?>
 
     <!-- BLOC TRANSPARENCE : Alerte info Open Food Facts -->
     <div class="alert alert-dismissible fade show border-0 bg-light shadow-sm p-4 mb-4" role="alert">

@@ -2,16 +2,22 @@
 // controllers/SettingsController.php
 
 require_once 'config/database.php';
-require_once 'models/TagModel.php'; // On importe le nouveau modèle
+require_once 'models/UserModel.php';
+require_once 'models/TagModel.php';
+require_once 'models/ProfileModel.php';
 
 class SettingsController {
     private $db;
     private $tagModel;
+    private $userModel;
+    private $profileModel;
 
     public function __construct() {
         $database = new Database();
         $this->db = $database->getConnection();
         $this->tagModel = new TagModel($this->db);
+        $this->userModel = new UserModel($this->db);
+        $this->profileModel = new ProfileModel($this->db);
     }
 
     public function indexAction() {
@@ -82,5 +88,35 @@ class SettingsController {
     }
 
 
+    public function manageProfileAction() {
 
+        $userId = $_SESSION['user_id'];
+
+        $user = $this->userModel->getUser($userId);
+        $profile = $this->profileModel->getProfile($userId); // On récupère les données morpho (table user_profiles)
+
+        require_once 'views/layout/header.php';
+        require_once 'views/settings/profile.php';
+        require_once 'views/layout/footer.php';
+        exit();
+    }
+
+    public function updateProfileAction() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+            $userId = $_SESSION['user_id'];
+
+            // 1. Mise à jour du pseudo (table users)
+            $this->userModel->updatePseudo($userId, $_POST['pseudo']);
+
+            // 2. Mise à jour du profil (table user_profiles)
+            $this->profileModel->saveProfile($userId, $_POST);
+
+            // 3. (Bonus) Si c'est la toute première fois, on ajoute aussi dans weight_history
+            // Pour être sûr, tu pourrais vérifier si c'est un nouvel enregistrement ici
+            
+            header('Location: index.php?action=manage_profile&success=1');
+            exit();
+        }
+    }
 }

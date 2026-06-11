@@ -9,7 +9,14 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
+
+// Dans index.php, avant d'instancier les contrôleurs
+require_once 'config/database.php';
+$database = new Database();
+$db = $database->getConnection(); // Récupère ta connexion PDO
+
 // 2. Inclusion des contrôleurs et configurations nécessaires
+require_once 'controllers/DashboardController.php';
 require_once 'controllers/AuthController.php';
 require_once 'controllers/FoodController.php';
 require_once 'controllers/SettingsController.php';
@@ -17,12 +24,11 @@ require_once 'controllers/SettingsController.php';
 // 3. Récupération de l'action dans l'URL. Si vide, l'action par défaut est 'dashboard'
 $action = $_GET['action'] ?? 'dashboard';
 
-// AJOUTE CETTE LIGNE :
-//if ($action === 'manage_tags') { die("Le routeur a bien reçu l'action : " . $action); }
 
 $authController = new AuthController();
 $foodController = new FoodController();
 $settingsController = new SettingsController();
+$dashboardController = new DashboardController($db);
 
 // 4. Système de protection des pages (Vérification de connexion)
 // Si l'utilisateur n'est pas connecté ET qu'il cherche à aller ailleurs que sur login ou register -> Redirection forcée !
@@ -50,13 +56,6 @@ switch ($action) {
         $foodController->indexAction();
         break;
 
-    case 'dashboard':
-        // Inclusion du tableau de bord temporaire
-        require_once 'views/layout/header.php';
-        require_once 'views/dashboard.php';
-        require_once 'views/layout/footer.php';
-        break;
-
     case 'settings':
         $settingsController->indexAction();
         break;
@@ -81,7 +80,22 @@ switch ($action) {
         $settingsController->deleteTagAction(); // effacer nom de groupe de favoris
     break;
 
+    case 'manage_profile': 
+        $settingsController->manageProfileAction(); // Acces page de gestion profil
+    break;
+
+    case 'update_profile': 
+        $settingsController->updateProfileAction(); // Ajoute ou mets à jour un progile
+    break;
+
+    case 'dashboard':
+        // NE FAIS PLUS LE REQUIRE ICI. 
+        // Appelle la méthode du contrôleur qui va tout gérer :
+        $dashboardController->dashboardAction();
+        break;
+
     default:
+
         // Page 404 ou redirection si l'action n'existe pas
         header('Location: index.php?action=dashboard');
         exit();

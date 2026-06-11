@@ -1,5 +1,5 @@
 <?php
-// models/settings/TagModel.php
+// models/TagModel.php
 
 class TagModel {
     private $db;
