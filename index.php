@@ -17,6 +17,9 @@ require_once 'controllers/SettingsController.php';
 // 3. Récupération de l'action dans l'URL. Si vide, l'action par défaut est 'dashboard'
 $action = $_GET['action'] ?? 'dashboard';
 
+// AJOUTE CETTE LIGNE :
+//if ($action === 'manage_tags') { die("Le routeur a bien reçu l'action : " . $action); }
+
 $authController = new AuthController();
 $foodController = new FoodController();
 $settingsController = new SettingsController();
@@ -56,6 +59,26 @@ switch ($action) {
 
     case 'settings':
         $settingsController->indexAction();
+        break;
+
+    case 'manage_tags': 
+        $settingsController->manageTagsAction(); // Acces page de gestion des noms de favori
+        break;
+
+    case 'add_tag':
+        $settingsController->addTagAction(); // Ajout nom de groupe de favori
+        break;
+
+    case 'edit_tag':
+        $settingsController->editTagAction(); // Acces formulaire édition nom de groupe de favori
+        break;
+
+    case 'update_tag':
+        $settingsController->updateTagAction(); // Mettre à jour nom de groupe de favori
+        break;
+
+    case 'delete_tag': 
+        $settingsController->deleteTagAction(); // effacer nom de groupe de favoris
     break;
 
     default:
