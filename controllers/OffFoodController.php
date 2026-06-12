@@ -2,16 +2,16 @@
 // controllers/OffFoodController.php
 
 require_once 'config/database.php';
-require_once 'models/FoodModel.php';
+require_once 'models/OffFoodModel.php';
 
 class OffFoodController {
     private $db;
-    private $foodModel;
+    private $offFoodModel;
 
     public function __construct() {
         $database = new Database();
         $this->db = $database->getConnection();
-        $this->foodModel = new FoodModel($this->db);
+        $this->offFoodModel = new OffFoodModel($this->db);
     }
 
     public function indexAction() {
@@ -167,7 +167,7 @@ class OffFoodController {
             if ($name && $calories !== false && $protein !== false && $carbs !== false && $sugars !== false && $fat !== false && $saturated_fat !== false && $fibers !== false && $salt !== false) {
                 
                 // ON COMMANDE LA VÉRIFICATION SPÉCIFIQUE AU MODÈLE
-                $duplicateType = $this->foodModel->checkDuplicate($name, $barcode, $id);
+                $duplicateType = $this->offFoodModel->checkDuplicate($name, $barcode, $id);
 
                 if ($duplicateType !== false) {
                     if ($duplicateType === 'barcode') {
@@ -184,18 +184,18 @@ class OffFoodController {
 
                     if ($id) {
                         // Transmission de $food_unit à la méthode update
-                        $result = $this->foodModel->update($id, $category_id, $name, $calories, $protein, $carbs, $sugars, $fat, $saturated_fat, $fibers, $salt, $barcode, $image_path, $off_url, $food_unit);
+                        $result = $this->offFoodModel->update($id, $category_id, $name, $calories, $protein, $carbs, $sugars, $fat, $saturated_fat, $fibers, $salt, $barcode, $image_path, $off_url, $food_unit);
                         $message = "L'aliment a été modifié avec succès !";
                         $foodItemId = $id;
                     } else {
                         // Transmission de $food_unit à la méthode create
-                        $result = $this->foodModel->create($category_id, $name, $calories, $protein, $carbs, $sugars, $fat, $saturated_fat, $fibers, $salt, $barcode, $image_path, $off_url, $food_unit);
+                        $result = $this->offFoodModel->create($category_id, $name, $calories, $protein, $carbs, $sugars, $fat, $saturated_fat, $fibers, $salt, $barcode, $image_path, $off_url, $food_unit);
                         $message = "L'aliment \"" . htmlspecialchars($name) . "\" a été ajouté !";
                         $foodItemId = $this->db->lastInsertId(); 
                     }
 
                     if ($result) {
-                        $this->foodModel->saveCustomName($foodItemId, $custom_name);
+                        $this->offFoodModel->saveCustomName($foodItemId, $custom_name);
                         $_SESSION['flash_success'] = $message;
                         header('Location: index.php?action=foods');
                         exit();
@@ -223,10 +223,10 @@ class OffFoodController {
         }
 
         // 4. On passe les paramètres au modèle pour obtenir la liste filtrée
-        $foods = $this->foodModel->getAll($currentUserId, $onlyCustom, $filterTagId);
+        $foods = $this->offFoodModel->getAll($currentUserId, $onlyCustom, $filterTagId);
 
         // 5. On récupère TOUTES les étiquettes de l'utilisateur pour construire le menu de filtrage dans la vue
-        $userTags = $this->foodModel->getUserTags($currentUserId);
+        $userTags = $this->offFoodModel->getUserTags($currentUserId);
 
 
         // RÉCUPÉRATION DES CATÉGORIES POUR LA LISTE DÉROULANTE

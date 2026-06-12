@@ -1,7 +1,7 @@
 <?php
-// models/FoodModel.php
+// models/OffFoodModel.php
 
-class FoodModel {
+class OffFoodModel {
     private $db;
     private $table = "food_items";
 
