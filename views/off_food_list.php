@@ -29,12 +29,12 @@ $currentUserId = $_SESSION['user_id'] ?? null;
     </div>
 <?php endif; ?>
 <div class="mb-3 d-flex flex-wrap gap-2">
-    <a href="index.php?action=foods" 
+    <a href="index.php?action=off_foods" 
        class="btn btn-sm <?php echo (!isset($_GET['filter_custom']) && !isset($_GET['filter_tag'])) ? 'btn-dark' : 'btn-outline-dark'; ?>">
         <i class="bi bi-grid-fill me-1"></i> Tout le catalogue
     </a>
     
-    <a href="index.php?action=foods&filter_custom=1" 
+    <a href="index.php?action=off_foods&filter_custom=1" 
        class="btn btn-sm <?php echo (isset($_GET['filter_custom']) && $_GET['filter_custom'] == '1') ? 'btn-info text-dark' : 'btn-outline-info'; ?>">
         <i class="bi bi-person-fill me-1"></i> Mes aliments Perso
     </a>
@@ -68,7 +68,7 @@ $currentUserId = $_SESSION['user_id'] ?? null;
         <ul class="dropdown-menu shadow">
             <li>
                 <a class="dropdown-item <?php echo (isset($_GET['filter_tag']) && $_GET['filter_tag'] === 'all') ? 'active' : ''; ?>" 
-                   href="index.php?action=foods&filter_tag=all">
+                   href="index.php?action=off_foods&filter_tag=all">
                     <i class="bi bi-stars me-2 text-warning"></i>Tous mes favoris
                 </a>
             </li>
@@ -78,7 +78,7 @@ $currentUserId = $_SESSION['user_id'] ?? null;
                         <?php if ($tag['id'] == 1) continue; // On ignore l'ID 1 ?>
                     <li>
                         <a class="dropdown-item <?php echo (isset($_GET['filter_tag']) && $_GET['filter_tag'] == $tag['id']) ? 'active' : ''; ?>" 
-                           href="index.php?action=foods&filter_tag=<?php echo $tag['id']; ?>">
+                           href="index.php?action=off_foods&filter_tag=<?php echo $tag['id']; ?>">
                             <i class="bi bi-bookmark-star me-2 text-muted"></i><?php echo htmlspecialchars($tag['tag_name']); ?>
                         </a>
                     </li>
@@ -264,7 +264,7 @@ $currentUserId = $_SESSION['user_id'] ?? null;
                 <button type="button" class="btn btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             
-            <form id="foodForm" action="index.php?action=foods" method="POST" onsubmit="document.getElementById('foodCategoryId').disabled = false;">
+            <form id="foodForm" action="index.php?action=off_foods" method="POST" onsubmit="document.getElementById('foodCategoryId').disabled = false;">
                 <div class="modal-body">
                     <input type="hidden" name="id" id="foodId">
                     
@@ -420,7 +420,7 @@ $currentUserId = $_SESSION['user_id'] ?? null;
                 <h5 class="modal-title"><i class="bi bi-exclamation-triangle"></i> Confirmation</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="index.php?action=foods" method="POST">
+            <form action="index.php?action=off_foods" method="POST">
                 <div class="modal-body">
                     <p>Es-tu sûr de vouloir supprimer l'aliment <strong id="deleteFoodName"></strong> ?</p>
                     <p class="text-muted small mb-0">Cette action est irréversible.</p>
@@ -1002,7 +1002,7 @@ function openFavoriteManager(foodId, foodName) {
     }
 
     // Récupération du statut actuel via AJAX
-    fetch(`index.php?action=foods&subaction=get_food_fav_status&fav_id=${foodId}`)
+    fetch(`index.php?action=off_foods&subaction=get_food_fav_status&fav_id=${foodId}`)
         .then(res => res.json())
         .then(data => {
             if (data.is_favorite) {
@@ -1066,7 +1066,7 @@ function updateFoodTagsJson() {
     }
 
     const tagsParam = encodeURIComponent(JSON.stringify(selectedTags));
-    const url = `index.php?action=foods&subaction=save_food_favorites&fav_id=${foodId}&is_favorite=${isFavorite ? '1' : '0'}&tags=${tagsParam}`;
+    const url = `index.php?action=off_foods&subaction=save_food_favorites&fav_id=${foodId}&is_favorite=${isFavorite ? '1' : '0'}&tags=${tagsParam}`;
 
     fetch(url)
     .then(res => res.json())

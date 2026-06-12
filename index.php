@@ -52,7 +52,7 @@ switch ($action) {
         $authController->logoutAction();
         break;
 
-    case 'foods': // <-- ROUTE POUR LE CATALOGUE D'ALIMENTS
+    case 'off_foods': // <-- ROUTE POUR LE CATALOGUE D'ALIMENTS
         $offFoodController->indexAction();
         break;
 

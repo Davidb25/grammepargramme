@@ -115,7 +115,7 @@ class OffFoodController {
 
             if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'ADMIN') {
                 // Stop ! Tu n'es pas admin, tu ne passes pas.
-                header("Location: index.php?action=foods&error=Action non autorisée.");
+                header("Location: index.php?action=off_foods&error=Action non autorisée.");
                 exit();
             }
 
@@ -126,7 +126,7 @@ class OffFoodController {
                 $stmt->execute(['id' => $delete_id]);
                 
                 $_SESSION['flash_success'] = "Aliment supprimé avec succès !";
-                header('Location: index.php?action=foods');
+                header('Location: index.php?action=off_foods');
                 exit();
                 
             } catch (PDOException $e) {
@@ -176,7 +176,7 @@ class OffFoodController {
                         $_SESSION['flash_error'] = "Impossible d'enregistrer : un aliment nommé <strong class='text-dark'>\"" . htmlspecialchars($name) . "\"</strong> existe déjà dans ton catalogue !";
                     }
                     
-                    header('Location: index.php?action=foods');
+                    header('Location: index.php?action=off_foods');
                     exit();
                 } else {
                     $result = false;
@@ -197,11 +197,11 @@ class OffFoodController {
                     if ($result) {
                         $this->offFoodModel->saveCustomName($foodItemId, $custom_name);
                         $_SESSION['flash_success'] = $message;
-                        header('Location: index.php?action=foods');
+                        header('Location: index.php?action=off_foods');
                         exit();
                     } else {
                         $_SESSION['flash_error'] = "Une erreur est survenue en base de données.";
-                        header('Location: index.php?action=foods');
+                        header('Location: index.php?action=off_foods');
                         exit();
                     }
                 }
