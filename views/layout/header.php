@@ -26,7 +26,7 @@
                         <a class="nav-link" href="index.php?action=dashboard"><i class="bi bi-house-door me-1"></i>Journal</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="index.php?action=off_foods"><i class="bi bi-egg-fried me-1"></i>Catalogue Aliments</a>
+                        <a class="nav-link" href="index.php?action=off_foods"><i class="bi bi-egg-fried me-1"></i>Produits OpenFoodFacts </a>
                     </li>
                 </ul>
                 <div class="d-flex align-items-center">

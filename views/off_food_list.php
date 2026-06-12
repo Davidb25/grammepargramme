@@ -7,7 +7,7 @@ $currentUserId = $_SESSION['user_id'] ?? null;
 ?>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="bi bi-egg-fried me-2 text-success"></i>Catalogue des Aliments</h2>
+    <h2><i class="bi bi-egg-fried me-2 text-success"></i>Produits OpenFoodFacts</h2>
     <button type="button" class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#addFoodModal" onclick="setupAddMode()">
         <i class="bi bi-plus-lg me-2"></i>Ajouter un aliment
     </button>
