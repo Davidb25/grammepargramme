@@ -241,7 +241,7 @@ class OffFoodController {
 
         // Inclusion des vues
         require_once 'views/layout/header.php';
-        require_once 'views/food_list.php';
+        require_once 'views/off_food_list.php';
         require_once 'views/layout/footer.php';
     }
 }
