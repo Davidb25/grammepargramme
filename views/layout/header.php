@@ -28,6 +28,9 @@
                     <li class="nav-item">
                         <a class="nav-link" href="index.php?action=off_foods"><i class="bi bi-egg-fried me-1"></i>Produits OpenFoodFacts </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.php?action=ciqual_foods"><i class="bi bi-egg-fried me-1"></i>Aliments Ciqual</a>
+                    </li>
                 </ul>
                 <div class="d-flex align-items-center">
                     <span class="text-light me-3 small">

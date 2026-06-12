@@ -19,6 +19,7 @@ $db = $database->getConnection(); // Récupère ta connexion PDO
 require_once 'controllers/DashboardController.php';
 require_once 'controllers/AuthController.php';
 require_once 'controllers/OffFoodController.php';
+require_once 'controllers/CiqualFoodController.php';
 require_once 'controllers/SettingsController.php';
 
 // 3. Récupération de l'action dans l'URL. Si vide, l'action par défaut est 'dashboard'
@@ -27,6 +28,7 @@ $action = $_GET['action'] ?? 'dashboard';
 
 $authController = new AuthController();
 $offFoodController = new OffFoodController();
+$ciqualFoodController = new CiqualFoodController();
 $settingsController = new SettingsController();
 $dashboardController = new DashboardController($db);
 
@@ -52,8 +54,12 @@ switch ($action) {
         $authController->logoutAction();
         break;
 
-    case 'off_foods': // <-- ROUTE POUR LE CATALOGUE D'ALIMENTS
+    case 'off_foods': // <-- ROUTE POUR LE CATALOGUE DE PRODUITS OFF
         $offFoodController->indexAction();
+        break;
+
+    case 'ciqual_foods': // <-- ROUTE POUR LE CATALOGUE D'ALIMENTS CIQUAL
+        $ciqualFoodController->indexAction();
         break;
 
     case 'settings':

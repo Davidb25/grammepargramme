@@ -1,5 +1,5 @@
 <?php
-// views/food_list.php
+// views/off_food_list.php
 
 $isAdmin = isset($_SESSION['user_role']) && strtoupper($_SESSION['user_role']) === 'ADMIN';
 $currentUserId = $_SESSION['user_id'] ?? null;
