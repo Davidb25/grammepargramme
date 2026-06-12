@@ -1,10 +1,10 @@
 <?php
-// controllers/FoodController.php
+// controllers/OffFoodController.php
 
 require_once 'config/database.php';
 require_once 'models/FoodModel.php';
 
-class FoodController {
+class OffFoodController {
     private $db;
     private $foodModel;
 

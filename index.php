@@ -18,7 +18,7 @@ $db = $database->getConnection(); // Récupère ta connexion PDO
 // 2. Inclusion des contrôleurs et configurations nécessaires
 require_once 'controllers/DashboardController.php';
 require_once 'controllers/AuthController.php';
-require_once 'controllers/FoodController.php';
+require_once 'controllers/OffFoodController.php';
 require_once 'controllers/SettingsController.php';
 
 // 3. Récupération de l'action dans l'URL. Si vide, l'action par défaut est 'dashboard'
@@ -26,7 +26,7 @@ $action = $_GET['action'] ?? 'dashboard';
 
 
 $authController = new AuthController();
-$foodController = new FoodController();
+$offFoodController = new OffFoodController();
 $settingsController = new SettingsController();
 $dashboardController = new DashboardController($db);
 
@@ -53,7 +53,7 @@ switch ($action) {
         break;
 
     case 'foods': // <-- ROUTE POUR LE CATALOGUE D'ALIMENTS
-        $foodController->indexAction();
+        $offFoodController->indexAction();
         break;
 
     case 'settings':
