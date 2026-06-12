@@ -50,10 +50,10 @@ INSERT INTO `categories` (`id`, `name`, `color`) VALUES
 -- --------------------------------------------------------
 
 --
--- Structure de la table `food_items`
+-- Structure de la table `off_food_items`
 --
 
-CREATE TABLE `food_items` (
+CREATE TABLE `off_food_items` (
   `id` int(11) NOT NULL,
   `name` varchar(255) NOT NULL,
   `barcode` varchar(50) DEFAULT NULL,
@@ -76,10 +76,10 @@ CREATE TABLE `food_items` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
--- Déchargement des données de la table `food_items`
+-- Déchargement des données de la table `off_food_items`
 --
 
-INSERT INTO `food_items` (`id`, `name`, `barcode`, `image_path`, `off_url`, `kcal_per_100g`, `fat_per_100g`, `saturated_fat_per_100g`, `carbohydrates_per_100g`, `sugar_per_100g`, `proteins_per_100g`, `fibers_per_100g`, `salt_per_100g`, `water_per_100g`, `is_recipe`, `created_at`, `category_id`, `user_id`, `food_unit`) VALUES
+INSERT INTO `off_food_items` (`id`, `name`, `barcode`, `image_path`, `off_url`, `kcal_per_100g`, `fat_per_100g`, `saturated_fat_per_100g`, `carbohydrates_per_100g`, `sugar_per_100g`, `proteins_per_100g`, `fibers_per_100g`, `salt_per_100g`, `water_per_100g`, `is_recipe`, `created_at`, `category_id`, `user_id`, `food_unit`) VALUES
 (39, 'Extra Noir 85%', '3580288107754', 'https://images.openfoodfacts.org/images/products/358/028/810/7754/front_fr.3.400.jpg', 'https://fr.openfoodfacts.org/produit/3580288107754', 592, '50.00', '31.00', '18.00', '14.00', '9.70', '15.00', '0.02', '0.00', 0, '2026-06-09 04:37:49', 8, NULL, 'g'),
 (40, 'Tomate Patricia', NULL, NULL, NULL, 17, '2.60', '0.00', '1.50', '0.80', '0.00', '1.20', '0.12', '0.00', 0, '2026-06-09 04:39:33', 5, 2, 'g'),
 (41, 'Produit test', '2006050124251', NULL, NULL, 18, '2.36', '1.24', '3.20', '0.58', '1.40', '2.10', '0.09', '0.00', 0, '2026-06-09 04:43:55', 8, 2, 'g'),
@@ -199,9 +199,9 @@ ALTER TABLE `categories`
   ADD PRIMARY KEY (`id`);
 
 --
--- Index pour la table `food_items`
+-- Index pour la table `off_food_items`
 --
-ALTER TABLE `food_items`
+ALTER TABLE `off_food_items`
   ADD PRIMARY KEY (`id`),
   ADD KEY `fk_food_category` (`category_id`);
 
@@ -253,9 +253,9 @@ ALTER TABLE `categories`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
--- AUTO_INCREMENT pour la table `food_items`
+-- AUTO_INCREMENT pour la table `off_food_items`
 --
-ALTER TABLE `food_items`
+ALTER TABLE `off_food_items`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=45;
 
 --
@@ -287,9 +287,9 @@ ALTER TABLE `user_food_customization`
 --
 
 --
--- Contraintes pour la table `food_items`
+-- Contraintes pour la table `off_food_items`
 --
-ALTER TABLE `food_items`
+ALTER TABLE `off_food_items`
   ADD CONSTRAINT `fk_food_category` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON DELETE SET NULL;
 
 --
@@ -302,14 +302,14 @@ ALTER TABLE `user_favorite_tags`
 -- Contraintes pour la table `user_food_customization`
 --
 ALTER TABLE `user_food_customization`
-  ADD CONSTRAINT `user_food_customization_ibfk_1` FOREIGN KEY (`food_item_id`) REFERENCES `food_items` (`id`) ON DELETE CASCADE;
+  ADD CONSTRAINT `user_food_customization_ibfk_1` FOREIGN KEY (`food_item_id`) REFERENCES `off_food_items` (`id`) ON DELETE CASCADE;
 
 --
 -- Contraintes pour la table `user_food_tags`
 --
 ALTER TABLE `user_food_tags`
   ADD CONSTRAINT `user_food_tags_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `user_food_tags_ibfk_2` FOREIGN KEY (`food_item_id`) REFERENCES `food_items` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `user_food_tags_ibfk_2` FOREIGN KEY (`food_item_id`) REFERENCES `off_food_items` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `user_food_tags_ibfk_3` FOREIGN KEY (`tag_id`) REFERENCES `user_favorite_tags` (`id`) ON DELETE CASCADE;
 COMMIT;
 

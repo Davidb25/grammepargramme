@@ -122,7 +122,7 @@ class OffFoodController {
             $delete_id = intval($_POST['delete_id']);
             
             try {
-                $stmt = $this->db->prepare("DELETE FROM food_items WHERE id = :id");
+                $stmt = $this->db->prepare("DELETE FROM off_food_items WHERE id = :id");
                 $stmt->execute(['id' => $delete_id]);
                 
                 $_SESSION['flash_success'] = "Aliment supprimé avec succès !";

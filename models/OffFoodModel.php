@@ -3,7 +3,7 @@
 
 class OffFoodModel {
     private $db;
-    private $table = "food_items";
+    private $table = "off_food_items";
 
     public function __construct($dbConnection) {
         $this->db = $dbConnection;
@@ -40,7 +40,7 @@ class OffFoodModel {
         $sql = "SELECT f.*, c.name AS category_name, ufc.custom_name,
                        GROUP_CONCAT(uft.tag_name SEPARATOR ', ') AS food_tags,
                        GROUP_CONCAT(uft.id SEPARATOR ', ') AS food_tag_ids
-                FROM food_items f
+                FROM off_food_items f
                 LEFT JOIN categories c ON f.category_id = c.id
                 LEFT JOIN user_food_customization ufc ON f.id = ufc.food_item_id AND ufc.user_id = :user_id
                 LEFT JOIN user_food_tags map ON f.id = map.food_item_id AND map.user_id = :user_id
@@ -82,7 +82,7 @@ class OffFoodModel {
             $userIdToInsert = $_SESSION['user_id'] ?? null;
         }
 
-        $sql = "INSERT INTO food_items (category_id, name, kcal_per_100g, proteins_per_100g, carbohydrates_per_100g, sugar_per_100g, fat_per_100g, saturated_fat_per_100g, fibers_per_100g, salt_per_100g, barcode, image_path, off_url, food_unit, user_id) 
+        $sql = "INSERT INTO off_food_items (category_id, name, kcal_per_100g, proteins_per_100g, carbohydrates_per_100g, sugar_per_100g, fat_per_100g, saturated_fat_per_100g, fibers_per_100g, salt_per_100g, barcode, image_path, off_url, food_unit, user_id) 
                 VALUES (:category_id, :name, :calories, :protein, :carbs, :sugars, :fat, :saturated_fat, :fibers, :salt, :barcode, :image_path, :off_url, :food_unit, :user_id)";
         
         $stmt = $this->db->prepare($sql);
@@ -108,7 +108,7 @@ class OffFoodModel {
     public function update($id, $category_id, $name, $calories, $protein, $carbs, $sugars, $fat, $saturated_fat, $fibers, $salt, $barcode, $image_path, $off_url, $food_unit = 'g') {
         // Pour l'UPDATE, on supprime la modification du 'user_id' afin de ne pas écraser 
         // le créateur d'origine de l'aliment si un admin passe modifier une valeur.
-        $sql = "UPDATE food_items SET 
+        $sql = "UPDATE off_food_items SET 
                     category_id = :category_id,
                     name = :name, 
                     kcal_per_100g = :calories, 
@@ -153,7 +153,7 @@ class OffFoodModel {
 
     public function checkDuplicate($name, $barcode = null, $excludeId = null) {
         if (!empty($barcode)) {
-            $sql = "SELECT COUNT(*) FROM food_items WHERE barcode = :barcode";
+            $sql = "SELECT COUNT(*) FROM off_food_items WHERE barcode = :barcode";
             if (!empty($excludeId)) {
                 $sql .= " AND id != :excludeId";
             }
@@ -170,7 +170,7 @@ class OffFoodModel {
             }
         }
 
-        $sql = "SELECT COUNT(*) FROM food_items WHERE LOWER(name) = LOWER(:name)";
+        $sql = "SELECT COUNT(*) FROM off_food_items WHERE LOWER(name) = LOWER(:name)";
         if (!empty($excludeId)) {
             $sql .= " AND id != :excludeId";
         }

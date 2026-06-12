@@ -20,6 +20,9 @@ class CiqualFoodController {
             session_start();
         }
 
+
+        // chqrgement des données de la table
+
         // Inclusion des vues
         require_once 'views/layout/header.php';
         require_once 'views/ciqual_food_list.php';

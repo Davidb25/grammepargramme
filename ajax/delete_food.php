@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'])) {
         $db = $database->getConnection(); // Ou la méthode que tu utilises pour récupérer la connexion PDO
         
         // Requête de suppression sécurisée
-        $stmt = $db->prepare("DELETE FROM food_items WHERE id = :id");
+        $stmt = $db->prepare("DELETE FROM off_food_items WHERE id = :id");
         $stmt->execute(['id' => $id]);
 
         echo json_encode(['success' => true, 'message' => 'Aliment supprimé avec succès.']);
