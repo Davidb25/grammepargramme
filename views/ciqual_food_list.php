@@ -21,7 +21,7 @@ $currentUserId = $_SESSION['user_id'] ?? null;
                 id="globalSearchInput" 
                 class="form-control border-start-0 ps-0" 
                 placeholder="Rechercher un aliment par son nom, son code-barres ou ton surnom perso..." 
-                onkeyup="filterFoodTable()">
+                onkeyup="filterCiqualTable()">
             <button class="btn btn-outline-secondary" type="button" onclick="clearSearch()">
                 <i class="bi bi-x-lg"></i>
             </button>
@@ -34,7 +34,7 @@ $currentUserId = $_SESSION['user_id'] ?? null;
                     <tr>
                         <th>Code de l'aliment</th>
                         <th>Nom de l'aliment</th>
-                        <th>Portion (100g/ml)</th>
+                        <th>Kcal (100g/100ml)</th>
                         <th>Protéines</th>
                         <th>Glucides <small>(sucres)</small></th>
                         <th>Lipides <small>(saturés)</small></th>
@@ -76,7 +76,7 @@ $currentUserId = $_SESSION['user_id'] ?? null;
                                 <td><?php echo $food['fibres_g']; ?> <?php echo htmlspecialchars($food['food_unit'] ?? 'g'); ?></td>
                                 <td><?php echo $food['eau_g']; ?> <?php echo htmlspecialchars($food['food_unit'] ?? 'g'); ?></td>
                                 
-                                <td><?php echo $food['sodium_mg']; ?> <?php echo htmlspecialchars($food['food_unit'] ?? 'g'); ?></td>
+                                <td><?php echo $food['sel_g']; ?> <?php echo htmlspecialchars($food['food_unit'] ?? 'g'); ?></td>
 
                                 <td class="align-middle text-end" style="width: 60px;">
                                     <div class="d-flex justify-content-end gap-1">
@@ -98,3 +98,31 @@ $currentUserId = $_SESSION['user_id'] ?? null;
         </div>
     </div>
 </div>
+
+<script>
+
+function filterCiqualTable() {
+    const input = document.getElementById('globalSearchInput');
+    const filter = input.value.toLowerCase().trim();
+    const table = document.querySelector('.table tbody');
+    const rows = table.getElementsByTagName('tr');
+
+    if (rows.length === 1 && rows[0].cells.length === 1) return;
+
+    for (let i = 0; i < rows.length; i++) {
+        const nameCell = rows[i].getElementsByTagName('td')[1];
+        if (nameCell) {
+            const textValue = nameCell.textContent || nameCell.innerText;
+            if (textValue.toLowerCase().indexOf(filter) > -1) {
+                rows[i].style.display = "";
+            } else {
+                rows[i].style.display = "none";
+            }
+        }
+    }
+}
+
+
+
+
+</script>
