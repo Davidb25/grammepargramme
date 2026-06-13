@@ -8,7 +8,7 @@
 </div>
 
 <div class="mb-3 p-3 bg-light rounded border border-warning-subtle">
-    <label class="form-label fw-bold text-dark"><i class="bi bi-upc-scan me-2 text-warning"></i>Scanner ou saisir un Code-barres (Recherche Auto)</label>
+    <label class="form-label fw-bold text-dark"><i class="bi bi-upc-scan me-2 text-warning"></i>Scanner ou saisir un Code-barres</label>
     <div class="input-group">
         <input type="text" name="barcode" id="foodBarcode" class="form-control" placeholder="Scanner ou saisir manuellement..." oninput="checkBarcodeLength(this.value)">
         <button class="btn btn-primary" type="button" id="btnScanCamera" onclick="startCameraScanner()" title="Scanner avec l'appareil photo">
@@ -21,92 +21,95 @@
     </div>
     <div id="apiFeedback" class="small mt-1 d-none"></div>
 </div>
-
+<div id="formProductOff" class="border p-3 rounded shadow-sm d-none">
     <div id="foodImagePreviewContainer" class="mb-3 text-center d-none">
         <label class="form-label d-block fw-semibold text-muted">Visuel de l'aliment</label>
-        <img id="foodImagePreview" src="" alt="Aperçu" class="img-thumbnail shadow-sm" style="max-height: 120px; max-width: 100px; object-fit: cover;">
+        <img id="foodImagePreview" src="" alt="Aperçu" class="img-thumbnail shadow-sm" style="max-height: 120px; object-fit: cover;">
     </div>
 
-<div class="row">
-    <div class="col-8 mb-3">
-        <label class="form-label fw-bold">Nom de l'aliment *</label>
-        <input type="text" name="name" id="foodName" class="form-control" required placeholder="ex: Skyr, Miel...">
+    <div class="row">
+        <div class="col-12 col-md-7 mb-3">
+            <label class="form-label fw-bold">Nom de l'aliment *</label>
+            <input type="text" name="name" id="foodName" class="form-control" required placeholder="ex: Skyr, Miel...">
+        </div>
+        <div class="col-12 col-md-3 mb-3">
+            <label class="form-label fw-bold">Code-barre *</label>
+            <input type="text" name="name" id="foodCode" class="form-control">
+        </div>
+        <div class="col-12 col-md-2 mb-3">
+            <label class="form-label fw-bold">Unité de base *</label>
+            <select name="food_unit" id="foodUnit" class="form-select fw-bold border-dark" onchange="updateDynamicLabels(this.value)">
+                <option value="g" selected>Grammes (g)</option>
+                <option value="ml">Millilitres (ml)</option>
+            </select>
+        </div>
     </div>
-    <div class="col-4 mb-3">
-        <label class="form-label fw-bold">Unité de base *</label>
-        <select name="food_unit" id="foodUnit" class="form-select fw-bold border-dark" onchange="updateDynamicLabels(this.value)">
-            <option value="g" selected>Grammes (g)</option>
-            <option value="ml">Millilitres (ml)</option>
+
+    <div class="mb-3">
+        <label class="form-label fw-bold">Catégorie *</label>
+        <select name="category_id" id="foodCategoryId" class="form-control" required>
+            <option value="" disabled selected>-- Choisir une catégorie --</option>
+            <?php if (!empty($categories)): ?>
+                <?php foreach ($categories as $cat): ?>
+                    <option value="<?php echo $cat['id']; ?>">
+                        <?php echo htmlspecialchars($cat['name']); ?>
+                    </option>
+                <?php endforeach; ?>
+            <?php endif; ?>
         </select>
     </div>
-</div>
 
-<div class="mb-3">
-    <label class="form-label fw-bold">Catégorie *</label>
-    <select name="category_id" id="foodCategoryId" class="form-control" required>
-        <option value="" disabled selected>-- Choisir une catégorie --</option>
-        <?php if (!empty($categories)): ?>
-            <?php foreach ($categories as $cat): ?>
-                <option value="<?php echo $cat['id']; ?>">
-                    <?php echo htmlspecialchars($cat['name']); ?>
-                </option>
-            <?php endforeach; ?>
-        <?php endif; ?>
-    </select>
-</div>
-
-<div class="mb-3">
-    <label class="form-label fw-bold">Calories (<span class="dyn-unit">kcal</span>) (pour 100<span class="lbl-unit">g</span>) *</label>
-    <input type="number" step="any" name="calories" id="foodCalories" class="form-control" required>
-</div>
-
-<div class="row">
-    <div class="col-6 mb-3">
-        <label class="form-label fw-semibold">Glucides (pour 100<span class="lbl-unit">g</span>) *</label>
-        <input type="number" step="0.01" name="carbs" id="foodCarbs" class="form-control" required>
+    <div class="mb-3">
+        <label class="form-label fw-bold">Calories (<span class="dyn-unit">kcal</span>) (pour 100<span class="lbl-unit">g</span>) *</label>
+        <input type="number" step="any" name="calories" id="foodCalories" class="form-control" required>
     </div>
-    <div class="col-6 mb-3">
-        <label class="form-label text-muted">dont Sucres (g) *</label>
-        <input type="number" step="0.01" name="sugars" id="foodSugars" class="form-control" required>
-    </div>
-</div>
 
-<div class="row">
-    <div class="col-6 mb-3">
-        <label class="form-label fw-semibold">Lipides (pour 100<span class="lbl-unit">g</span>) *</label>
-        <input type="number" step="0.01" name="fat" id="foodFat" class="form-control" required>
+    <div class="row">
+        <div class="col-12 col-md-6 mb-3">
+            <label class="form-label fw-semibold">Glucides (pour 100<span class="lbl-unit">g</span>) *</label>
+            <input type="number" step="0.01" name="carbs" id="foodCarbs" class="form-control" required>
+        </div>
+        <div class="col-12 col-md-6 mb-3">
+            <label class="form-label text-muted">dont Sucres (g) *</label>
+            <input type="number" step="0.01" name="sugars" id="foodSugars" class="form-control" required>
+        </div>
     </div>
-    <div class="col-6 mb-3">
-        <label class="form-label text-muted">dont Saturés (g) *</label>
-        <input type="number" step="0.01" name="saturated_fat" id="foodSaturatedFat" class="form-control" required>
+
+    <div class="row">
+        <div class="col-12 col-md-6 mb-3">
+            <label class="form-label fw-semibold">Lipides (pour 100<span class="lbl-unit">g</span>) *</label>
+            <input type="number" step="0.01" name="fat" id="foodFat" class="form-control" required>
+        </div>
+        <div class="col-12 col-md-6 mb-3">
+            <label class="form-label text-muted">dont Saturés (g) *</label>
+            <input type="number" step="0.01" name="saturated_fat" id="foodSaturatedFat" class="form-control" required>
+        </div>
     </div>
-</div>
 
-<div class="row">
-    <div class="col-6 mb-3">
-        <label class="form-label fw-semibold">Protéines (pour 100<span class="lbl-unit">g</span>) *</label>
-        <input type="number" step="0.01" name="protein" id="foodProtein" class="form-control" required>
+    <div class="row">
+        <div class="col-12 col-md-6 mb-3">
+            <label class="form-label fw-semibold">Protéines (pour 100<span class="lbl-unit">g</span>) *</label>
+            <input type="number" step="0.01" name="protein" id="foodProtein" class="form-control" required>
+        </div>
+        <div class="col-12 col-md-6 mb-3">
+            <label class="form-label fw-semibold">Fibres (g) *</label>
+            <input type="number" step="0.01" name="fibers" id="foodFibers" class="form-control" required>
+        </div>
     </div>
-    <div class="col-6 mb-3">
-        <label class="form-label fw-semibold">Fibres (g) *</label>
-        <input type="number" step="0.01" name="fibers" id="foodFibers" class="form-control" required>
+
+    <div class="mb-3 col-12 col-md-6">
+        <label class="form-label fw-semibold">Sel (g) *</label>
+        <input type="number" step="0.01" name="salt" id="foodSalt" class="form-control" required>
     </div>
-</div>
 
-<div class="mb-3 col-6">
-    <label class="form-label fw-semibold">Sel (g) *</label>
-    <input type="number" step="0.01" name="salt" id="foodSalt" class="form-control" required>
-</div>
-
-<div class="mb-3">
-    <label class="form-label fw-semibold">Lien URL de la Photo (Open Food Facts ou Web)</label>
-    <input type="text" name="image_path" id="foodImage" class="form-control" placeholder="https://images.openfoodfacts.org/...jpg">
-</div>
-
-<div class="mb-3">
-    <label class="form-label fw-semibold">Lien de la Fiche Produit (En savoir plus)</label>
-    <input type="text" name="off_url" id="foodUrl" class="form-control" placeholder="https://fr.openfoodfacts.org/produit/...">
-</div>
+    <div class="mb-3">
+        <label class="form-label fw-semibold">Lien URL de la Photo</label>
+        <input type="text" name="image_path" id="foodImage" class="form-control">
+    </div>
+    <div class="mb-3">
+        <label class="form-label fw-semibold">Lien de la Fiche Produit</label>
+        <input type="text" name="off_url" id="foodUrl" class="form-control">
+    </div>
 </div>
 
 <script>
@@ -119,6 +122,7 @@ function checkBarcodeLength(barcode) {
     } else {
 
         clearApiFeedback();
+        document.getElementById('foodCode').value = '';
         document.getElementById('foodName').value = '';
         document.getElementById('foodCalories').value = '';
         document.getElementById('foodCarbs').value = '';
@@ -160,7 +164,7 @@ function updateDynamicLabels(unit) {
 
 function setFoodFieldsReadOnly(isReadOnly) {
     const fields = [
-        'foodName', 'foodCategoryId', 'foodUnit', 'foodCalories', 
+        'foodName', 'foodCode', 'foodUnit', 'foodCategoryId', 'foodCalories', 
         'foodCarbs', 'foodSugars', 'foodFat', 'foodSaturatedFat', 
         'foodProtein', 'foodFibers', 'foodSalt', 'foodImage', 'foodUrl'
     ];
@@ -182,27 +186,11 @@ function setFoodFieldsReadOnly(isReadOnly) {
         }
     });
 
-    const barcodeInput = document.getElementById('foodBarcode');
-    if (barcodeInput) {
-        barcodeInput.readOnly = isReadOnly;
-        if (isReadOnly) {
-            barcodeInput.classList.add('bg-light');
-        } else {
-            barcodeInput.classList.remove('bg-light');
-        }
-    }
-
     const btnSubmit = document.getElementById('btnSubmit');
     if (btnSubmit) {
         btnSubmit.classList.remove('d-none');
     }
 }
-
-
-
-
-
-
 
 
 </script>

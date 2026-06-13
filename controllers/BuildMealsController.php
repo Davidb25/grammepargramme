@@ -20,6 +20,7 @@ class BuildMealsController {
             session_start();
         }
 
+        // Chargement des catégories de produits
         $categories = $this->buildMealsModel->getAllCategories();
 
         // Inclusion des vues

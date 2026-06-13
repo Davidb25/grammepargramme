@@ -54,6 +54,8 @@ function fetchOFFData(barcode) {
                 document.getElementById('foodCalories').value = kcal ? Math.round(kcal) : '';
                 const formatMacro = (val) => (val !== undefined && val !== '') ? parseFloat(val).toFixed(2) : '';
 
+                document.getElementById('foodCode').value = product.code;
+
                 document.getElementById('foodCarbs').value = formatMacro(carbs);
                 document.getElementById('foodSugars').value = formatMacro(sugars) || '0.00';
                 document.getElementById('foodFat').value = formatMacro(fat);
@@ -119,6 +121,10 @@ function fetchOFFData(barcode) {
                     feedback.innerHTML = "<i class='bi bi-check-circle-fill me-2'></i> Produit trouvé avec succès !";
                     setFoodFieldsReadOnly(true);
                 }
+
+            document.getElementById('formProductOff').classList.remove('d-none');
+            document.getElementById('foodBarcode').value='';
+
             } else {
                 feedback.className = "alert alert-danger mt-2 mb-0 py-2 d-block";
                 feedback.innerHTML = "<i class='bi bi-exclamation-circle-fill me-2'></i> Produit inconnu. Saisie 100% manuelle.";
