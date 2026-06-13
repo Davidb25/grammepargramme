@@ -20,9 +20,7 @@ class BuildMealsController {
             session_start();
         }
 
-        // chqrgement des données de la table
-
-        //$ref_ciqual = $this->ciqualFoodModel->getAll();
+        $categories = $this->buildMealsModel->getAllCategories();
 
         // Inclusion des vues
         require_once 'views/layout/header.php';
