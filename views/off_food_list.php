@@ -734,7 +734,7 @@ function fetchOFFData(barcode) {
                     setFoodFieldsReadOnly(false);
                 } else {
                     feedback.className = "alert alert-success mt-2 mb-0 py-2 d-block";
-                    feedback.innerHTML = "<i class='bi bi-check-circle-fill me-2'></i> Produit importé avec succès !";
+                    feedback.innerHTML = "<i class='bi bi-check-circle-fill me-2'></i> Produit trouvé avec succès !";
                     setFoodFieldsReadOnly(true);
                 }
             } else {
