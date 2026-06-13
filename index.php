@@ -21,16 +21,17 @@ require_once 'controllers/AuthController.php';
 require_once 'controllers/OffFoodController.php';
 require_once 'controllers/CiqualFoodController.php';
 require_once 'controllers/SettingsController.php';
+require_once 'controllers/BuildMealsController.php';
 
 // 3. Récupération de l'action dans l'URL. Si vide, l'action par défaut est 'dashboard'
 $action = $_GET['action'] ?? 'dashboard';
-
 
 $authController = new AuthController();
 $offFoodController = new OffFoodController();
 $ciqualFoodController = new CiqualFoodController();
 $settingsController = new SettingsController();
 $dashboardController = new DashboardController($db);
+$buildMealsController = new BuildMealsController();
 
 // 4. Système de protection des pages (Vérification de connexion)
 // Si l'utilisateur n'est pas connecté ET qu'il cherche à aller ailleurs que sur login ou register -> Redirection forcée !
@@ -98,6 +99,10 @@ switch ($action) {
         // NE FAIS PLUS LE REQUIRE ICI. 
         // Appelle la méthode du contrôleur qui va tout gérer :
         $dashboardController->dashboardAction();
+        break;
+
+    case 'build_meals':
+        $buildMealsController->indexAction();
         break;
 
     default:

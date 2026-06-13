@@ -31,6 +31,9 @@
                     <li class="nav-item">
                         <a class="nav-link" href="index.php?action=ciqual_foods"><i class="bi bi-egg-fried me-1"></i>Aliments Ciqual</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.php?action=build_meals"><i class="bi bi-egg-fried me-1"></i>Définir repas</a>
+                    </li>
                 </ul>
                 <div class="d-flex align-items-center">
                     <span class="text-light me-3 small">
