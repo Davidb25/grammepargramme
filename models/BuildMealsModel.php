@@ -22,13 +22,14 @@ class BuildMealsModel {
         }
     }
 
+    public function getAllOffProducts() {
+        
+        $sql = "SELECT f.*, c.name AS category_name FROM off_food_items f
+                INNER JOIN categories c ON f.category_id = c.id";
+                
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 
-
-    // public function getAll() {
-
-    //     $query = "SELECT * FROM " . $this->table . " ORDER BY alim_nom_fr ASC " ;
-    //     $stmt = $this->db->prepare($query);
-    //     $stmt->execute();
-    //     return $stmt->fetchAll(PDO::FETCH_ASSOC);     
-    // }
 }

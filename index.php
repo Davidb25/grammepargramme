@@ -105,9 +105,14 @@ switch ($action) {
         $buildMealsController->indexAction();
         break;
 
+    case 'ajax_load_catalog_off_products':
+        $buildMealsController->loadCatalogOffAction();
+        break;
+
     default:
 
         // Page 404 ou redirection si l'action n'existe pas
         header('Location: index.php?action=dashboard');
         exit();
 }
+

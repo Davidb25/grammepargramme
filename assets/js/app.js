@@ -140,3 +140,4 @@ function fetchOFFData(barcode) {
             feedback.innerHTML = "<i class='bi bi-wifi-off me-2'></i> Erreur réseau.";
         });
 }
+

@@ -29,4 +29,20 @@ class BuildMealsController {
         require_once 'views/layout/footer.php';
     }
 
+
+public function loadCatalogOffAction() {
+    // 1. Appel au modèle pour récupérer les données (tu réutilises ta requête existante !)
+    $products = $this->buildMealsModel->getAllOffProducts(); // Assure-toi que cette méthode existe
+
+    // 2. On indique au navigateur qu'on envoie du JSON
+    header('Content-Type: application/json');
+
+    // 3. On transforme le tableau PHP en texte JSON et on arrête le script
+    echo json_encode($products);
+    exit; // Très important pour ne pas afficher le reste de la page
+}
+
+
+
+
 }

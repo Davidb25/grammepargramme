@@ -1,12 +1,32 @@
 <?php
 // views/build_meals.php
-
 ?>
+
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2><i class="bi bi-egg-fried me-2 text-success"></i>Définir votre repas</h2>
 </div>
+<div class="mb-3 d-flex flex-wrap gap-2" style="height:80px; width:100%; border: solid 1px blue">
+    Calcul calorique et nutritionnel de mon repas
+    <div id="containerCalculRepas" style="width: 100%; min-height:40px; background-color: rgb(180,180,180)"></div>
+</div>
+<div class="mb-3 d-flex flex-wrap gap-2">
+    <button class="btn btn-sm <?php echo (!isset($_GET['filter_custom']) && !isset($_GET['filter_tag'])) ? 'btn-dark' : 'btn-outline-dark'; ?>" onclick="loadCatalogOffproducts()">
+        <i class="bi bi-grid-fill me-1"></i> Catalogue OpenFoodFacts
+    </button>
+</div>
+    
+<?php
+// On appelle la vue du catalogue de produit OpenFoodFacts. 
 
+    require 'partials/_table_products_off.php';
+
+?>
+
+
+<!-- Concerne ajout produit ------------------------------->
+<!-- Concerne ajout produit ------------------------------->
+<!-- Concerne ajout produit ------------------------------
 <div class="mb-3 p-3 bg-light rounded border border-warning-subtle">
     <label class="form-label fw-bold text-dark"><i class="bi bi-upc-scan me-2 text-warning"></i>Scanner ou saisir un Code-barres</label>
     <div class="input-group">
@@ -21,6 +41,10 @@
     </div>
     <div id="apiFeedback" class="small mt-1 d-none"></div>
 </div>
+
+-->
+
+
 <div id="formProductOff" class="border p-3 rounded shadow-sm d-none">
     <div id="foodImagePreviewContainer" class="mb-3 text-center d-none">
         <label class="form-label d-block fw-semibold text-muted">Visuel de l'aliment</label>
@@ -113,6 +137,32 @@
 </div>
 
 <script>
+
+
+function loadCatalogOffproducts() {
+    console.log('je charge le catalogue');
+
+    fetch('index.php?action=ajax_load_catalog_off_products') // Appelle la méthode AJAX
+        .then(res => res.json())
+        .then(data => {
+            console.log(data); // Ici tu as ton tableau de produits !
+            // Maintenant, tu peux boucler sur 'data' pour créer tes éléments HTML
+            // data.forEach(product => { ... });
+
+            renderTableOffProducts(data); // On passe la réponse JSON à notre fonction d'affichage dans la vue
+
+        })
+        .catch(err => {
+            console.error("Erreur lors de la récupération du catalogue:", err);
+        });
+}
+
+
+
+
+
+
+
 
 function checkBarcodeLength(barcode) {
     const cleanedBarcode = barcode.trim();
