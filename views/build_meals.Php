@@ -23,7 +23,6 @@
 
 ?>
 
-
 <!-- Concerne ajout produit ------------------------------->
 <!-- Concerne ajout produit ------------------------------->
 <!-- Concerne ajout produit ------------------------------
@@ -136,6 +135,16 @@
     </div>
 </div>
 
+
+<?php
+// Modal de gestion de favori d'un aliment. 
+
+    require 'partials/_modal_favorite_food.php';
+
+?>
+
+
+
 <script>
 
 
@@ -156,11 +165,6 @@ function loadCatalogOffproducts() {
             console.error("Erreur lors de la récupération du catalogue:", err);
         });
 }
-
-
-
-
-
 
 
 

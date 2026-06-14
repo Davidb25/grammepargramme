@@ -74,6 +74,7 @@
     <table id="tableOffProduct" class="table">
         <thead class="table-light">
             <tr>
+                <th>Id</th>
                 <th style="width: 60px;">Visuel</th>
                 <th>Nom de l'aliment</th>
                 <th>Catégorie</th>
@@ -120,6 +121,7 @@ function renderTableOffProducts(products) {
             barcodeHtml = `<br><small class="text-muted fw-normal"><i class="bi bi-upc-scan me-1"></i></small>`;
 
         row.innerHTML = `
+            <td>${escapeHtml(product.id)}</td>
             <td>${imgDisplay}</td>
             <td class="fw-bold">
                 ${escapeHtml(product.name)}
@@ -133,9 +135,21 @@ function renderTableOffProducts(products) {
             <td>${escapeHtml(product.fibers_per_100g)}g</td>
             <td>${escapeHtml(product.salt_per_100g)}g</td>
             <td class="text-end">
-                <button class="btn btn-sm btn-outline-primary" onclick="addToMeal(${escapeHtml(product.id)})">
-                    <i class="bi bi-plus-circle"></i>
-                </button>
+                <div class="d-flex justify-content-end gap-1">
+                    <button type="button" 
+                        class="btn btn-sm btn-outline-warning btn-action" 
+                        title="Gérer les favoris et étiquettes"
+                        onclick="openFavoriteManager(${escapeHtml(product.id)}, '${escapeHtml(product.name)}')">
+                        <i class="bi <?php echo !empty($food['food_tags']) ? 'bi-star-fill text-warning' : 'bi-star'; ?>" 
+                        id="star-icon-${escapeHtml(product.id)})" 
+                        style="font-size: 1rem;"></i>
+                    </button>
+                    <button
+                        class="btn btn-sm btn-outline-primary" onclick="addToMeal(${escapeHtml(product.id)})"
+                        title="Ajouter à votre repas">
+                        <i class="bi bi-plus-circle"></i>
+                    </button>
+                </div>
             </td>
         `;
         tableBody.appendChild(row);
@@ -184,7 +198,5 @@ function escapeHtml(text) {
     };
     return text.toString().replace(/[&<>"']/g, function(m) { return map[m]; });
 }
-
-
 
 </script>

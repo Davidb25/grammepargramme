@@ -141,3 +141,109 @@ function fetchOFFData(barcode) {
         });
 }
 
+
+// =======================================================
+//   GESTION DES FAVORIS ET ÉTIQUETTES (AJAX)
+// =======================================================
+let favoriteModalBootstrap = null;
+
+// Ouvre le gestionnaire et pré-remplit l'état actuel des favoris pour l'aliment
+function openFavoriteManager(foodId, foodName) {
+    document.getElementById('favModalFoodId').value = foodId;
+    document.getElementById('favModalFoodName').innerText = foodName;
+
+    // Réinitialise l'affichage des cases du modal
+    const generalSwitch = document.getElementById('checkFavGeneral');
+    generalSwitch.checked = false;
+    document.getElementById('sectionSubTags').classList.add('d-none');
+    
+    // Décoche toutes les étiquettes du modal
+    document.querySelectorAll('.fav-tag-checkbox').forEach(cb => cb.checked = false);
+
+    // Initialisation propre du modal Bootstrap s'il n'existe pas encore
+    if (!favoriteModalBootstrap) {
+        const modalEl = document.getElementById('favoriteModal');
+        if (modalEl) {
+            favoriteModalBootstrap = new bootstrap.Modal(modalEl);
+        }
+    }
+
+    // Récupération du statut actuel via AJAX
+    fetch(`index.php?action=api&subaction=get_food_fav_status&fav_id=${foodId}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.is_favorite) {
+                generalSwitch.checked = true;
+                document.getElementById('sectionSubTags').classList.remove('d-none');
+                
+                if (data.tags && Array.isArray(data.tags)) {
+                    data.tags.forEach(tagId => {
+                        const cb = document.getElementById(`modalTag_${tagId}`);
+                        if (cb) cb.checked = true;
+                    });
+                }
+            }
+            if (favoriteModalBootstrap) {
+                favoriteModalBootstrap.show();
+            }
+        })
+        .catch(err => {
+            console.error("Erreur lors de la récupération du statut favori:", err);
+            // Sécurité : on affiche quand même le modal si le réseau rame
+            if (favoriteModalBootstrap) {
+                favoriteModalBootstrap.show();
+            }
+        });
+}
+
+// Gère l'activation / désactivation globale du favori (Interrupteur)
+function toggleGeneralFavorite() {
+    const foodId = document.getElementById('favModalFoodId').value;
+    const isChecked = document.getElementById('checkFavGeneral').checked;
+    const sectionSubTags = document.getElementById('sectionSubTags');
+    const starIcon = document.getElementById(`star-icon-${foodId}`);
+
+    // FORCE L'ALLUMAGE IMMÉDIAT VISUEL
+    if (isChecked) {
+        if (sectionSubTags) sectionSubTags.classList.remove('d-none');
+        if (starIcon) {
+            starIcon.className = "bi bi-star-fill text-warning";
+        }
+    } else {
+        if (sectionSubTags) sectionSubTags.classList.add('d-none');
+        if (starIcon) {
+            starIcon.className = "bi bi-star";
+        }
+    }
+    
+    // Envoi de la sauvegarde en arrière-plan
+    updateFoodTagsJson();
+}
+
+// Envoie l'état complet au serveur en tâche de fond (Sauvegarde)
+function updateFoodTagsJson() {
+    const foodId = document.getElementById('favModalFoodId').value;
+    const isFavorite = document.getElementById('checkFavGeneral').checked;
+    
+    const selectedTags = [];
+    if (isFavorite) {
+        document.querySelectorAll('.fav-tag-checkbox:checked').forEach(cb => {
+            selectedTags.push(parseInt(cb.value));
+        });
+    }
+
+    const tagsParam = encodeURIComponent(JSON.stringify(selectedTags));
+    const url = `index.php?action=api&subaction=save_food_favorites&fav_id=${foodId}&is_favorite=${isFavorite ? '1' : '0'}&tags=${tagsParam}`;
+
+    fetch(url)
+    .then(res => res.json())
+    .then(data => {
+        if (!data.success) {
+            console.error("Erreur de sauvegarde des favoris:", data.message);
+        } else {
+            console.log("Enregistré avec succès !");
+        }
+    })
+    .catch(err => console.error("Erreur réseau favoris:", err));
+}
+

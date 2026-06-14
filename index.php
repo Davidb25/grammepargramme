@@ -22,6 +22,7 @@ require_once 'controllers/OffFoodController.php';
 require_once 'controllers/CiqualFoodController.php';
 require_once 'controllers/SettingsController.php';
 require_once 'controllers/BuildMealsController.php';
+require_once 'controllers/ApiController.php';
 
 // 3. Récupération de l'action dans l'URL. Si vide, l'action par défaut est 'dashboard'
 $action = $_GET['action'] ?? 'dashboard';
@@ -32,6 +33,7 @@ $ciqualFoodController = new CiqualFoodController();
 $settingsController = new SettingsController();
 $dashboardController = new DashboardController($db);
 $buildMealsController = new BuildMealsController();
+$apiController = new ApiController($db);
 
 // 4. Système de protection des pages (Vérification de connexion)
 // Si l'utilisateur n'est pas connecté ET qu'il cherche à aller ailleurs que sur login ou register -> Redirection forcée !
@@ -103,6 +105,16 @@ switch ($action) {
 
     case 'build_meals':
         $buildMealsController->indexAction();
+        break;
+
+
+    case 'api':
+        $subaction = $_GET['subaction'] ?? '';
+        if ($subaction === 'get_food_fav_status') {
+            $apiController->getFoodFavStatusAction();
+        } elseif ($subaction === 'save_food_favorites') {
+            $apiController->saveFoodFavoritesAction();
+        }
         break;
 
     case 'ajax_load_catalog_off_products':
